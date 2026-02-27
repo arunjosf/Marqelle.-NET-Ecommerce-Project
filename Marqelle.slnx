@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="MyApi/Marqelle.Api.csproj" />
+  <Project Path="MyApplication/Marqelle.Application.csproj" />
+  <Project Path="MyDomain/Marqelle.Domain.csproj" />
+  <Project Path="MyInfrastructure/Marqelle.Infrastructure.csproj" />
+</Solution>
