@@ -12,9 +12,11 @@ namespace Marqelle.Application.Interfaces
     {
         List<Users> GetAll();
         Users GetById(long id);
-        void Register(RegisterRequestDto dto);
+        void Register(Users user);
         void UpdateProfile(long userId, string firstName, string lastName, string email, string password);
         void Delete(long id);
         void UpdateRefreshToken(long userId, string refreshToken, DateTime expiryTime);
+        void LogOut(long userId);
+        Users GetByRefreshToken(string refreshToken);
     };
 }

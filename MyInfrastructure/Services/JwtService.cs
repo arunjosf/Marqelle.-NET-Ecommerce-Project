@@ -1,15 +1,16 @@
-﻿using Microsoft.Extensions.Configuration;
-using Microsoft.IdentityModel.Tokens;
+﻿using Marqelle.Application.Interfaces;
 using Marqelle.Domain.Entities;
-using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using Microsoft.Extensions.Configuration;
+using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
 
 
-namespace Marqelle.Api.Services
+namespace Marqelle.Infrastructure.Services
 {
-        public class JwtService
-        {
+    public class JwtService : IJwtService
+    {
             private readonly IConfiguration _configuration;
 
             public JwtService(IConfiguration configuration)
@@ -23,11 +24,11 @@ namespace Marqelle.Api.Services
                 var key = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(jwtSettings["key"]));
                 var roleName = user.RoleId == 1 ? "User" : "Admin";
 
-            var tokenDescriptor = new SecurityTokenDescriptor
+                var tokenDescriptor = new SecurityTokenDescriptor
 
                 {
                     Subject = new ClaimsIdentity(new[]
-                    {
+                        {
                     new Claim("UserId",user.Id.ToString()),
                     new Claim(ClaimTypes.Email, user.Email),
                     new Claim(ClaimTypes.Role, roleName)

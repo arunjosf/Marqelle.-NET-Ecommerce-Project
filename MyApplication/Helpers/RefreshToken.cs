@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Marqelle.Application.Helpers
 {
-    public static class RefreshTokenHasher
+    public class RefreshToken
     {
         public static string GenerateRefreshToken()
         {

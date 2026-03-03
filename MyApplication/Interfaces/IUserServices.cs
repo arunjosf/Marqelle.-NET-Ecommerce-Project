@@ -1,10 +1,11 @@
-﻿using Marqelle.Domain.Entities;
+﻿using Marqelle.Application.DTO;
+using Marqelle.Domain.Entities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.ConstrainedExecution;
 using System.Text;
 using System.Threading.Tasks;
-using Marqelle.Application.DTO;
 
 namespace Marqelle.Application.Interfaces
 {
@@ -16,5 +17,7 @@ namespace Marqelle.Application.Interfaces
         void ChangePassword(long userId, string newPassword);
         void UpdateProfile(long userId, string firstName, string lastName, string email, string password);
         void UpdateRefreshToken(long userId, string refreshToken, DateTime expiry);
+        Users ValidateRefreshToken(string refreshToken);
+        void LogOut(long userId);
     }
 }

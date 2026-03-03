@@ -1,5 +1,7 @@
 ﻿using Dapper;
+using Marqelle.Application.DTO;
 using Marqelle.Application.Interfaces;
+using Marqelle.Application.Services;
 using Marqelle.Domain.Entities;
 using System;
 using System.Collections.Generic;
@@ -7,27 +9,39 @@ using System.Data;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Marqelle.Application.DTO;
+
 
 namespace Marqelle.Infrastructure.Repositories
 {
     public class UserRepository : IUserRepository
     {
         private readonly IDbConnection _db;
+        private readonly IPasswordService _passwordService;
 
-        public UserRepository(IDbConnection db)
+        public UserRepository(IDbConnection db, IPasswordService passwordService)
         {
             _db = db;
+            _passwordService = passwordService;
         }
 
-        public void Register(RegisterRequestDto dto)
+        public void Register(Users user)
         {
             string sql = @"INSERT INTO Users 
-                           (FirstName, LastName, Email, Password)
+                           (FirstName, LastName, Email, Password, RoleId, Blocked, Status, RefreshToken, RefreshTokenExpiryTime)
                            VALUES 
-                           (@FirstName, @LastName, @Email, @Password)";
+                           (@FirstName, @LastName, @Email, @Password, @RoleId, @Blocked, @Status, @RefreshToken, @RefreshTokenExpiryTime)";
 
-            _db.Execute(sql, dto);
+            if (user.RoleId == 0)
+                user.RoleId = 1;
+
+            if (user.Blocked == false) user.Blocked = false;
+
+            if (string.IsNullOrEmpty(user.Status)) user.Status = "Active";
+
+            if (string.IsNullOrEmpty(user.RefreshToken))
+                user.RefreshToken = ""; 
+            user.RefreshTokenExpiryTime = null; 
+            _db.Execute(sql, user);
         }
 
         public List<Users> GetAll()
@@ -79,6 +93,32 @@ namespace Marqelle.Infrastructure.Repositories
                 RefreshToken = refreshToken,
                 ExpiryTime = expiryTime
             });
+        }
+
+        public Users? GetByRefreshToken(string refreshToken)
+        {
+ 
+            var usersWithTokens = _db.Query<Users>("SELECT * FROM Users WHERE RefreshToken IS NOT NULL");
+
+            foreach (var user in usersWithTokens)
+            {
+                if (_passwordService.Verify(user.RefreshToken, refreshToken, user))
+                {
+                    if (user.RefreshTokenExpiryTime == null || user.RefreshTokenExpiryTime < DateTime.UtcNow)
+                        return null;
+
+                    return user;
+                }
+            }
+
+            return null;
+        }
+        public void LogOut(long userId)
+        {
+            string sql = @"UPDATE Users SET RefreshToken = '',
+                          RefreshTokenExpiryTime = NULL
+                          WHERE Id = @userId";
+            _db.Execute(sql, new { UserId = userId });
         }
     }
 }

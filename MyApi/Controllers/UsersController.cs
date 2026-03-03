@@ -1,64 +1,60 @@
 ﻿using Marqelle.Application.DTO;
-using Marqelle.Api.Services;
-using Marqelle.Domain.Entities;
-using Marqelle.Application.Interfaces;
-using Microsoft.AspNetCore.Http;
 using Marqelle.Application.Helpers;
-
+using Marqelle.Application.Interfaces;
+using Marqelle.Domain.Entities;
+using Marqelle.Infrastructure.Repositories;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Marqelle.Api.Controllers
 {
     [Route("api/[controller]")]
-    [ApiController]
+    [ApiController] 
     public class UsersController : ControllerBase
     {
         private readonly IUserServices _userService;
-        private readonly JwtService _jwtService;
+        private readonly IJwtService _jwtService;
+        private readonly IPasswordService _passwordService;
 
-        public UsersController(IUserServices userService, JwtService jwtService)
+        public UsersController(IUserServices userService, IJwtService jwtService, IPasswordService passwordService)
         {
             _userService = userService;
             _jwtService = jwtService;
+            _passwordService = passwordService;
         }
 
         [HttpPost("register")]
-        public ActionResult Register([FromBody] RegisterRequestDto dto)
+        public ActionResult Register([FromForm] RegisterRequestDto dto) 
         {
             var createdUser = _userService.Register(dto);
-            return Ok("registrd");
+            return Ok("registrd"); 
         }
 
 
         [HttpPost("login")]
         public ActionResult Login([FromBody] LoginRequestDto request)
         {
-            // 1️⃣ Validate user credentials
             var user = _userService.Login(request.Email, request.Password);
             if (user == null) return Unauthorized("Invalid credentials");
 
-            // 2️⃣ Generate access token (JWT)
             var accessToken = _jwtService.GenerateToken(user);
 
-            // 3️⃣ Generate a new refresh token
-            var refreshToken = RefreshTokenHasher.GenerateRefreshToken();
+            var refreshToken = RefreshToken.GenerateRefreshToken();
 
-            // 4️⃣ Hash the refresh token and store in DB with expiry
-            var hashedToken = PasswordHasher.HashPassword(refreshToken);
-            var refreshTokenExpiry = DateTime.UtcNow.AddDays(7); // 7 days expiry
+            var hashedToken = _passwordService.Hash(refreshToken, user);
+            var refreshTokenExpiry = DateTime.UtcNow.AddDays(7); 
             _userService.UpdateRefreshToken(user.Id, hashedToken, refreshTokenExpiry);
 
-            // 5️⃣ Set access token in HttpOnly cookie
             var accessCookieOptions = new CookieOptions
             {
                 HttpOnly = true,
-                Expires = DateTime.UtcNow.AddMinutes(60), // match JWT expiry
+                Expires = DateTime.UtcNow.AddMinutes(60), 
                 Secure = true,
                 SameSite = SameSiteMode.Strict
             };
             Response.Cookies.Append("accessToken", accessToken, accessCookieOptions);
 
-            // 6️⃣ Set refresh token in HttpOnly cookie
             var refreshCookieOptions = new CookieOptions
             {
                 HttpOnly = true,
@@ -68,7 +64,6 @@ namespace Marqelle.Api.Controllers
             };
             Response.Cookies.Append("refreshToken", refreshToken, refreshCookieOptions);
 
-            // 7️⃣ Return access token in response body (optional)
             return Ok(new
             {
                 Token = accessToken,
@@ -76,6 +71,60 @@ namespace Marqelle.Api.Controllers
 
             });
         }
+
+        [Authorize]
+        [HttpPost("logout")]
+        public ActionResult LogOut()
+        {
+            var UserIdclaim = User.FindFirst("UserId");
+
+            if(UserIdclaim == null)
+            {
+                return Unauthorized();
+            }
+
+            var userId = long.Parse(UserIdclaim.Value);
+            _userService.LogOut(userId);
+            Response.Cookies.Delete("accessToken");
+            Response.Cookies.Delete("refreshToken");
+            return Ok("Logged Out Succefully");
+        }
+
+        [HttpPost("refresh")]
+        public ActionResult Refresh()
+        {
+            var refreshToken = Request.Cookies["refreshToken"] ?? "";
+            refreshToken = Uri.UnescapeDataString(refreshToken);
+
+
+            if (string.IsNullOrEmpty(refreshToken))
+                return Unauthorized();
+
+            var user = _userService.ValidateRefreshToken(refreshToken);
+
+            if (user == null)
+            { 
+                return BadRequest("2");
+            }
+                
+
+            var newAccessToken = _jwtService.GenerateToken(user);
+
+            var accessCookieOptions = new CookieOptions
+            {
+                HttpOnly = true,
+                Expires = DateTime.UtcNow.AddMinutes(60),
+                Secure = true,
+                SameSite = SameSiteMode.Strict
+            };
+
+            Response.Cookies.Append("accessToken", newAccessToken, accessCookieOptions);
+
+            return Ok(new
+            {
+                Token = newAccessToken
+            });
+        }
     }
 }
-    
+     
