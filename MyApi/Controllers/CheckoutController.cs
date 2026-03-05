@@ -1,0 +1,43 @@
+﻿using Marqelle.Application.Interfaces;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+
+namespace Marqelle.Api.Controllers
+{
+    [Route("api/[controller]")]
+    [ApiController]
+    public class CheckoutController : ControllerBase
+    {
+        private readonly ICheckoutService _checkoutService;
+        private readonly IUserServices _userService; 
+
+        public CheckoutController(ICheckoutService checkoutService, IUserServices userService)
+        {
+            _checkoutService = checkoutService;
+            _userService = userService;
+        }
+
+        [HttpGet("checkout-page")]
+        public async Task<IActionResult> GetCheckoutPage()
+        {
+            var userId = GetUserIdFromCookie();
+
+            if (userId == 0)
+                return Unauthorized("User not logged in");
+
+            var checkoutData = await _checkoutService.GetCheckoutPageAsync(userId);
+
+            return Ok(checkoutData);
+        }
+
+        private long GetUserIdFromCookie()
+        {
+            var userIdClaim = User.FindFirst("UserId")?.Value;
+
+            if (userIdClaim == null)
+                throw new Exception("User ID not found in token.");
+
+            return Convert.ToInt64(userIdClaim);
+        }
+    }
+}

@@ -23,6 +23,7 @@ namespace Marqelle.Infrastructure.Data
         public DbSet<Payments> Payments { get; set; }
         public DbSet<Users> Users { get; set; }
         public DbSet<Role> Role { get; set; }
+        public DbSet<Address> Addresses { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -51,6 +52,7 @@ namespace Marqelle.Infrastructure.Data
                 .WithMany(p => p.Carts)
                 .HasForeignKey(c => c.ProductId)
                 .OnDelete(DeleteBehavior.Cascade);
+
 
             modelBuilder.Entity<Wishlist>()
                 .HasOne(p => p.Product)
@@ -87,6 +89,12 @@ namespace Marqelle.Infrastructure.Data
             modelBuilder.Entity<Payments>()
                 .Property(p => p.Status)
                 .HasConversion<int>();
+
+            modelBuilder.Entity<Address>()
+                .HasOne(a => a.user)
+                .WithMany(u => u.Addresses)
+                .HasForeignKey(a => a.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
         }
     }
 }
