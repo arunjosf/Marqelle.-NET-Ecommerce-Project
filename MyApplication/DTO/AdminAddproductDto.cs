@@ -28,11 +28,11 @@ namespace Marqelle.Application.DTO
         [Required(ErrorMessage = "Add at least one image.")]
         [MinLength(1, ErrorMessage = "Add at least one image.")]
         public List<string> ImageUrls { get; set; } = new List<string>();
-
+        [Required(ErrorMessage = "Enter Description.")]
         public string Description { get; set; }
-
+        [Required(ErrorMessage = "Enter Rating.")]
         public double Rating { get; set; }
-
+        [Required(ErrorMessage = "Enter Stock Status")]
         public bool InStock { get; set; } = true;
     }
 }

@@ -12,7 +12,7 @@ namespace Marqelle.Application.Interfaces
     {
         Task AddAddress(long userId, AddressDto dto);
         Task<List<AddressDto>> GetUserAddress(long userId);
-        Task UpdateAddressAsync(long addressId, AddressDto dto);
+        Task UpdateAddressAsync(long addressId, long userId, AddressDto dto);
         Task DeleteAddress(long addressId);
         Task<AddressCheckoutDto?> GetCheckoutAddressAsync(long userId);
         Task<List<AddressCheckoutDto>> GetCheckoutAddressesAsync(long userId);

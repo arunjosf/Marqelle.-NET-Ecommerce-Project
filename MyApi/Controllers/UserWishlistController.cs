@@ -17,34 +17,55 @@ namespace Marqelle.Api.Controllers
             _wishlistService = wishlistService;
         }
 
-        // GET: api/Wishlist
-        [HttpGet]
+        [HttpGet("Get")]
         public async Task<ActionResult<List<WishlistDto>>> GetUserWishlist()
         {
             var userId = GetUserIdFromToken();
             var wishlist = await _wishlistService.GetUserWishlistAsync(userId);
-            return Ok(wishlist);
+           
+            return Ok(new ApiResponseDto<object>(
+              200,
+              true,
+              "Wishlist fetched successfully",
+              wishlist
+          ));
         }
+        
 
-        // POST: api/Wishlist
-        [HttpPost]
+        [HttpPost("add")]
         public async Task<IActionResult> AddToWishlist([FromBody] WishlistRequest request)
         {
             var userId = GetUserIdFromToken();
             await _wishlistService.AddToWishlistAsync(userId, request.ProductId);
-            return Ok(new { message = "Product added to wishlist" });
+
+            var wishlist = await _wishlistService.GetUserWishlistAsync(userId);
+
+
+            return Ok(new ApiResponseDto<object>(
+                200,
+                true,
+                "Product added to wishlist",
+                wishlist
+            ));
         }
 
-        // DELETE: api/Wishlist
-        [HttpDelete]
+        [HttpDelete("Delete")]
         public async Task<IActionResult> RemoveFromWishlist([FromBody] WishlistRequest request)
         {
             var userId = GetUserIdFromToken();
+
             await _wishlistService.RemoveFromWishlistAsync(userId, request.ProductId);
-            return Ok(new { message = "Product removed from wishlist" });
+
+            var wishlist = await _wishlistService.GetUserWishlistAsync(userId);
+
+            return Ok(new ApiResponseDto<object>(
+               200,
+               true,
+               "Product removed from wishlist",
+               wishlist
+           ));
         }
 
-        // Helper method to get userId from token
 
         private long GetUserIdFromToken()
         {
@@ -57,7 +78,7 @@ namespace Marqelle.Api.Controllers
         }
         public class WishlistRequest
         {
-            public long ProductId { get; set; } // Only need ProductId now
+            public long ProductId { get; set; } 
         }
     }
 }

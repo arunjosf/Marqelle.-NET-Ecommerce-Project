@@ -1,4 +1,5 @@
-﻿using Marqelle.Application.Interfaces;
+﻿using Marqelle.Application.DTO;
+using Marqelle.Application.Interfaces;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
@@ -26,62 +27,168 @@ namespace Marqelle.Api.Controllers
         }
 
         [HttpPost("add")]
-        public async Task<IActionResult> AddToCart(long productId, string size)
+        public async Task<ActionResult> AddToCart(long productId, string size)
         {
             var userId = GetUserId();
+
+            if (userId == null)
+            {
+                return Unauthorized(new ApiResponseDto<object>(
+                    StatusCodes.Status401Unauthorized,
+                    false,
+                    "User not authenticated",
+                    null
+                ));
+            }
 
             var result = await _service
                 .AddToCart(userId, productId, size);
 
-            return Ok(result);
+            if(result == null)
+            {
+                return BadRequest(new ApiResponseDto<object>(
+                    StatusCodes.Status400BadRequest,
+                    false,
+                    "Item already in cart",
+                    null
+                    ));
+            }
+
+            return Ok(new ApiResponseDto<object>(
+                StatusCodes.Status200OK,
+                true,
+                "Product added to cart",
+                result
+            ));
         }
 
-        [HttpGet]
-        public async Task<IActionResult> GetUserCart()
+        [HttpGet("Cartitems")]
+        public async Task<ActionResult> GetUserCart()
         {
             var userId = GetUserId();
+
+            if (userId == null)
+            {
+                return Unauthorized(new ApiResponseDto<object>(
+                    StatusCodes.Status401Unauthorized,
+                    false,
+                    "User not authenticated",
+                    null
+                ));
+            }
+
 
             var cart = await _service
                 .GetUserCart(userId);
 
-            return Ok(cart);
+            return Ok(new ApiResponseDto<object>(
+               StatusCodes.Status200OK,
+               true,
+               "Cart fetched successfully",
+               cart
+           ));
         }
 
-        [HttpPut("increase/{cartId}")]
-        public async Task<IActionResult> IncreaseQuantity(long cartId)
+        [HttpPut("increaseQty/{cartId}")]
+        public async Task<ActionResult> IncreaseQuantity(long cartId)
         {
+            var userId = GetUserId();
+
+            if (userId == null)
+            {
+                return Unauthorized(new ApiResponseDto<object>(
+                    StatusCodes.Status401Unauthorized,
+                    false,
+                    "User not authenticated",
+                    null
+                ));
+            }
+
             var result = await _service
                 .IncreaseQuantity(cartId);
 
-            return Ok(result);
+            return Ok(new ApiResponseDto<object>(
+                StatusCodes.Status200OK,
+                true,
+                "Quantity increased",
+                result
+            ));
         }
 
-        [HttpPut("decrease/{cartId}")]
-        public async Task<IActionResult> DecreaseQuantity(long cartId)
+        [HttpPut("decreaseQty/{cartId}")]
+        public async Task<ActionResult> DecreaseQuantity(long cartId)
         {
+            var userId = GetUserId();
+
+            if (userId == null)
+            {
+                return Unauthorized(new ApiResponseDto<object>(
+                    StatusCodes.Status401Unauthorized,
+                    false,
+                    "User not authenticated",
+                    null
+                ));
+            }
+
             var result = await _service
                 .DecreaseQuantity(cartId);
 
-            return Ok(result);
+            return Ok(new ApiResponseDto<object>(
+                StatusCodes.Status200OK,
+                true,
+                "Quantity decreased",
+                result
+            ));
         }
 
         [HttpDelete("remove/{cartId}")]
-        public async Task<IActionResult> RemoveFromCart(long cartId)
-        {
-            var result = await _service
-                .RemoveCart(cartId);
-
-            return Ok(result);
-        }
-        [HttpDelete("clear")]
-        public async Task<IActionResult> ClearCart()
+        public async Task<ActionResult> RemoveFromCart(long cartId)
         {
             var userId = GetUserId();
+
+            if (userId == null)
+            {
+                return Unauthorized(new ApiResponseDto<object>(
+                    StatusCodes.Status401Unauthorized,
+                    false,
+                    "User not authenticated",
+                    null
+                ));
+            }
+                var result = await _service
+                .RemoveCart(cartId);
+
+            return Ok(new ApiResponseDto<object>(
+               StatusCodes.Status200OK,
+               true,
+               "Product removed from cart",
+               result
+           ));
+        }
+        [HttpDelete("clearAll")]
+        public async Task<ActionResult> ClearCart()
+        {
+            var userId = GetUserId();
+
+            if (userId == null)
+            {
+                return Unauthorized(new ApiResponseDto<object>(
+                    StatusCodes.Status401Unauthorized,
+                    false,
+                    "User not authenticated",
+                    null
+                ));
+            }
 
             var result = await _service
                 .ClearAllCart(userId);
 
-            return Ok(result);
+            return Ok(new ApiResponseDto<object>(
+                StatusCodes.Status200OK,
+                true,
+                "Cart cleared successfully",
+                result
+            ));
         }
     }
 }

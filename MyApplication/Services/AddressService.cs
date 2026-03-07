@@ -51,6 +51,7 @@ namespace Marqelle.Application.Services
 
             return addresses.Select(a => new AddressDto
             {
+                AddressId = a.Id,
                 AddressType = a.AddressType,
                 FullName = a.FullName,
                 PhoneNumber = a.PhoneNumber,
@@ -64,12 +65,12 @@ namespace Marqelle.Application.Services
             }).ToList();
         }
 
-        public async Task UpdateAddressAsync(long addressId, AddressDto dto)
+        public async Task UpdateAddressAsync(long addressId,long userId, AddressDto dto)
         {
             var address = await _repository.GetAddressByIdAsync(addressId);
 
-            if (address == null)
-                throw new Exception("Address not found");
+            if (address == null || address.UserId != userId)
+                throw new Exception("Address not found or you are not authorized");
 
             address.AddressType = dto.AddressType;
             address.FullName = dto.FullName;

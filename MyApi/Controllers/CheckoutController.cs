@@ -1,4 +1,5 @@
-﻿using Marqelle.Application.Interfaces;
+﻿using Marqelle.Application.DTO;
+using Marqelle.Application.Interfaces;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -23,11 +24,21 @@ namespace Marqelle.Api.Controllers
             var userId = GetUserIdFromCookie();
 
             if (userId == 0)
-                return Unauthorized("User not logged in");
+                return Unauthorized(new ApiResponseDto<object>(
+                    StatusCodes.Status401Unauthorized,
+                    false,
+                    "User not logged in",
+                    null
+                ));
 
             var checkoutData = await _checkoutService.GetCheckoutPageAsync(userId);
 
-            return Ok(checkoutData);
+            return Ok(new ApiResponseDto<object>(
+                 StatusCodes.Status200OK,
+                 true,
+                 "Checkout data fetched successfully",
+                 checkoutData
+             ));
         }
 
         private long GetUserIdFromCookie()

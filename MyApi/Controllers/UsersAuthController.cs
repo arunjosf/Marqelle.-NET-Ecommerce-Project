@@ -11,13 +11,13 @@ namespace Marqelle.Api.Controllers
 {
     [Route("api/[controller]")]
     [ApiController] 
-    public class UsersController : ControllerBase
+    public class UsersAuthController : ControllerBase
     {
         private readonly IUserServices _userService;
         private readonly IJwtService _jwtService;
         private readonly IPasswordService _passwordService;
 
-        public UsersController(IUserServices userService, IJwtService jwtService, IPasswordService passwordService)
+        public UsersAuthController(IUserServices userService, IJwtService jwtService, IPasswordService passwordService)
         {
             _userService = userService;
             _jwtService = jwtService;
@@ -27,29 +27,61 @@ namespace Marqelle.Api.Controllers
         [HttpPost("register")]
         public ActionResult Register([FromForm] RegisterRequestDto dto) 
         {
+            if (!ModelState.IsValid)
+            {
+                var errors = ModelState
+                    .Where(x => x.Value.Errors.Count > 0)
+                    .Select(x => new
+                    {
+                        Field = x.Key,
+                        Message = x.Value.Errors.First().ErrorMessage
+                    }).ToList();
+
+                return BadRequest(new ApiResponseDto<object>(
+                    StatusCodes.Status400BadRequest,
+                    false,
+                    "Validation Failed",
+                    errors
+                ));
+            }
+
             var createdUser = _userService.Register(dto);
-            return Ok("registrd"); 
+
+            return Ok(new ApiResponseDto<object>(
+               StatusCodes.Status200OK,
+               true,
+               "User registered successfully",
+               createdUser
+           ));
         }
 
 
         [HttpPost("login")]
-        public ActionResult Login([FromBody] LoginRequestDto request)
+        public ActionResult Login([FromForm] LoginRequestDto request)
         {
             var user = _userService.Login(request.Email, request.Password);
-            if (user == null) return Unauthorized("Invalid credentials");
+            if (user == null)
+            {
+                return Unauthorized(new ApiResponseDto<object>(
+                    StatusCodes.Status401Unauthorized,
+                    false,
+                    "Invalid email or password",
+                    null
+                ));
+            }
 
             var accessToken = _jwtService.GenerateToken(user);
 
             var refreshToken = RefreshToken.GenerateRefreshToken();
 
             var hashedToken = _passwordService.Hash(refreshToken, user);
-            var refreshTokenExpiry = DateTime.UtcNow.AddDays(7); 
+            var refreshTokenExpiry = DateTime.UtcNow.AddDays(7);
             _userService.UpdateRefreshToken(user.Id, hashedToken, refreshTokenExpiry);
 
             var accessCookieOptions = new CookieOptions
             {
                 HttpOnly = true,
-                Expires = DateTime.UtcNow.AddMinutes(60), 
+                Expires = DateTime.UtcNow.AddMinutes(60),
                 Secure = true,
                 SameSite = SameSiteMode.Strict
             };
@@ -64,13 +96,17 @@ namespace Marqelle.Api.Controllers
             };
             Response.Cookies.Append("refreshToken", refreshToken, refreshCookieOptions);
 
-            return Ok(new
-            {
-                Token = accessToken,
-                refreshToken
-
-            });
+            return Ok(new ApiResponseDto<object>(
+                StatusCodes.Status200OK,
+                true,
+                "Login successful",
+                 new {
+                     Token = accessToken,
+                     RefreshToken = refreshToken
+                 }
+                ));
         }
+        
 
         [Authorize]
         [HttpPost("logout")]
@@ -78,16 +114,27 @@ namespace Marqelle.Api.Controllers
         {
             var UserIdclaim = User.FindFirst("UserId");
 
-            if(UserIdclaim == null)
+            if (UserIdclaim == null)
             {
-                return Unauthorized();
+                return Unauthorized(new ApiResponseDto<object>(
+                    StatusCodes.Status401Unauthorized,
+                    false,
+                    "User not authenticated",
+                    null
+                ));
             }
 
             var userId = long.Parse(UserIdclaim.Value);
             _userService.LogOut(userId);
             Response.Cookies.Delete("accessToken");
             Response.Cookies.Delete("refreshToken");
-            return Ok("Logged Out Succefully");
+
+            return Ok(new ApiResponseDto<object>(
+            StatusCodes.Status200OK,
+            true,
+            "Logged out successfully",
+            null
+     ));
         }
 
         [HttpPost("refresh")]
@@ -96,17 +143,28 @@ namespace Marqelle.Api.Controllers
             var refreshToken = Request.Cookies["refreshToken"] ?? "";
             refreshToken = Uri.UnescapeDataString(refreshToken);
 
-
             if (string.IsNullOrEmpty(refreshToken))
-                return Unauthorized();
+            {
+                return Unauthorized(new ApiResponseDto<object>(
+                    StatusCodes.Status401Unauthorized,
+                    false,
+                    "Refresh token not found",
+                    null
+                ));
+            }
 
             var user = _userService.ValidateRefreshToken(refreshToken);
 
             if (user == null)
-            { 
-                return BadRequest("2");
+            {
+                return BadRequest(new ApiResponseDto<object>(
+                    StatusCodes.Status400BadRequest,
+                    false,
+                    "Invalid or expired refresh token",
+                    null
+                ));
             }
-                
+
 
             var newAccessToken = _jwtService.GenerateToken(user);
 
@@ -120,10 +178,15 @@ namespace Marqelle.Api.Controllers
 
             Response.Cookies.Append("accessToken", newAccessToken, accessCookieOptions);
 
-            return Ok(new
-            {
-                Token = newAccessToken
-            });
+            return Ok(new ApiResponseDto<object>(
+            StatusCodes.Status200OK,
+            true,
+            "Access token refreshed successfully",
+            new {
+
+            Token = newAccessToken
+        }
+    ));
         }
     }
 }

@@ -21,8 +21,18 @@ namespace Marqelle.Api.Controllers
         public async Task<IActionResult> AddProduct([FromBody] AdminAddproductDto dto)
         {
             if (!ModelState.IsValid)
-                return BadRequest(ModelState); 
+            {
+                var errors = ModelState.Values
+                    .SelectMany(v => v.Errors)
+                    .Select(e => e.ErrorMessage);
 
+                return BadRequest(new ApiResponseDto<object>(
+                    400,
+                    false,
+                    "Validation failed",
+                    errors
+                ));
+            }
             try
             {
                 Products product = await _service.AddProducts(dto);
@@ -47,11 +57,21 @@ namespace Marqelle.Api.Controllers
             }
             catch (ArgumentException ex)
             {
-                return BadRequest(new { Success = false, Message = ex.Message });
+                return BadRequest(new ApiResponseDto<object>(
+                    400,
+                    false,
+                    ex.Message,
+                    null
+                ));
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { Success = false, Message = "Internal server error", Details = ex.Message });
+                return StatusCode(500, new ApiResponseDto<object>(
+                    500,
+                    false,
+                    "Internal server error",
+                    null
+                ));
             }
         }
     }

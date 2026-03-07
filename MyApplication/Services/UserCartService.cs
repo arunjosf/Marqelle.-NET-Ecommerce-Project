@@ -17,14 +17,14 @@ namespace Marqelle.Application.Services
             _repository = repository;
         }
 
-        public async Task<string> AddToCart(long userId, long productId, string size)
+        public async Task<Cart> AddToCart(long userId, long productId, string size)
         {
             var existItem = await _repository
                 .GetCartItemByProductAsync(userId, productId, size);
 
             if (existItem != null)
             {
-                return "Item already exists in cart.";
+                return null;
             }
 
             var cartItem = new Cart
@@ -37,7 +37,7 @@ namespace Marqelle.Application.Services
 
             await _repository.AddToCartAsync(cartItem);
             await _repository.SaveChangesAsync();
-            return "Item added to cart successfully.";
+            return cartItem;
         }
         public async Task<List<UserCartDto>> GetUserCart(long userId)
         {
@@ -71,14 +71,14 @@ namespace Marqelle.Application.Services
             var item = await _repository.GetCartItemByIdAsync(cartId);
 
             if (item == null)
-                return "Cart item not found.";
+                return "Item is not in the cart";
 
             item.Quantity += 1;
 
             _repository.UpdateCartItemAsync(item);
             await _repository.SaveChangesAsync();
 
-            return "Quantity increased.";
+            return "Successfully Increased Quantity";
         }
         public async Task<string> DecreaseQuantity(long cartId)
         {

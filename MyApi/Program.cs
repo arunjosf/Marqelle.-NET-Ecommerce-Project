@@ -11,6 +11,7 @@ using Microsoft.IdentityModel.Tokens;
 using System.Data;
 using System.Security.Claims;
 using System.Text;
+using Marqelle.Api.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
 var jwtSettings = builder.Configuration.GetSection("Jwt");
@@ -105,6 +106,9 @@ builder.Services.AddScoped<ICheckoutService, CheckoutService>();
 var configuration = builder.Configuration;
 
 var app = builder.Build();
+
+app.UseMiddleware<CredentialValidation>();
+app.UseMiddleware<AuthException>();
 
 if (app.Environment.IsDevelopment())
 {

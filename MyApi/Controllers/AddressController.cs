@@ -17,7 +17,6 @@ namespace Marqelle.Api.Controllers
             _addressService = addressService;
         }
 
-        // ADD ADDRESS
         [HttpPost("add")]
         public async Task<IActionResult> AddAddress(
             [FromQuery] string addressType,
@@ -47,23 +46,58 @@ namespace Marqelle.Api.Controllers
                 LandMark = landMark
             };
 
-            await _addressService.AddAddress(userId, dto);
+            if (userId == null)
+            {
+                return Unauthorized(new ApiResponseDto<object>(
+                    StatusCodes.Status401Unauthorized,
+                    false,
+                    "User not authenticated",
+                    null
+                ));
+            }
 
-            return Ok("Address added successfully");
+            if (!ModelState.IsValid)
+            {
+                var errors = ModelState.Values
+               .SelectMany(v => v.Errors)
+               .Select(e => e.ErrorMessage)
+               .ToList();
+
+                return BadRequest(new ApiResponseDto<List<string>>(
+                        StatusCodes.Status400BadRequest, false, "Validation Failed", errors));
+            }
+
+                await _addressService.AddAddress(userId, dto);
+
+                return Ok(new ApiResponseDto<object>(StatusCodes.Status200OK, true, "Address added successfully", null));
+            
         }
 
-        // GET USER ADDRESSES
         [HttpGet("user-addresses")]
         public async Task<IActionResult> GetUserAddresses()
         {
             var userId = GetUserIdFromCookie();
 
+            if (userId == null)
+            {
+                return Unauthorized(new ApiResponseDto<object>(
+                    StatusCodes.Status401Unauthorized,
+                    false,
+                    "User not authenticated",
+                    null
+                ));
+            }
+
             var addresses = await _addressService.GetUserAddress(userId);
 
-            return Ok(addresses);
+            return Ok(new ApiResponseDto<List<AddressDto>>(
+                StatusCodes.Status200OK,
+                true,
+                "User addresses fetched successfully",
+                addresses
+            ));
         }
 
-        // UPDATE ADDRESS
         [HttpPut("update")]
         public async Task<IActionResult> UpdateAddress(
             [FromQuery] long addressId,
@@ -92,43 +126,116 @@ namespace Marqelle.Api.Controllers
                 LandMark = landMark
             };
 
-            await _addressService.UpdateAddressAsync(addressId, dto);
+            var userId = GetUserIdFromCookie();
 
-            return Ok("Address updated successfully");
+            if (userId == null)
+            {
+                return Unauthorized(new ApiResponseDto<object>(
+                    StatusCodes.Status401Unauthorized,
+                    false,
+                    "User not authenticated",
+                    null
+                ));
+            }
+
+            if (!ModelState.IsValid)
+            {
+                var errors = ModelState.Values
+               .SelectMany(v => v.Errors)
+               .Select(e => e.ErrorMessage)
+               .ToList();
+
+                return BadRequest(new ApiResponseDto<List<string>>(
+                    StatusCodes.Status400BadRequest,
+                    false,
+                    "Validation failed",
+                    errors
+                ));
+            }
+                await _addressService.UpdateAddressAsync(addressId, userId, dto);
+
+            return Ok(new ApiResponseDto<object>(
+                StatusCodes.Status200OK,
+                true,
+                "Address updated successfully",
+                null
+            ));
         }
 
-        // DELETE ADDRESS
         [HttpDelete("delete")]
         public async Task<IActionResult> DeleteAddress([FromQuery] long addressId)
         {
+            var userId = GetUserIdFromCookie();
+
+            if (userId == null)
+            {
+                return Unauthorized(new ApiResponseDto<object>(
+                    StatusCodes.Status401Unauthorized,
+                    false,
+                    "User not authenticated",
+                    null
+                ));
+            }
             await _addressService.DeleteAddress(addressId);
 
-            return Ok("Address deleted successfully");
+            return Ok(new ApiResponseDto<object>(
+               StatusCodes.Status200OK,
+               true,
+               "Address deleted successfully",
+               null
+           ));
         }
 
-        // CHECKOUT ADDRESS
         [HttpGet("checkout-address")]
         public async Task<IActionResult> GetCheckoutAddress()
         {
             var userId = GetUserIdFromCookie();
 
+            if (userId == null)
+            {
+                return Unauthorized(new ApiResponseDto<object>(
+                    StatusCodes.Status401Unauthorized,
+                    false,
+                    "User not authenticated",
+                    null
+                ));
+            }
+
             var address = await _addressService.GetCheckoutAddressAsync(userId);
 
-            return Ok(address);
+            return Ok(new ApiResponseDto<AddressCheckoutDto>(
+               StatusCodes.Status200OK,
+               true,
+               "Checkout address fetched",
+               address
+               ));
         }
 
-        // GET ALL CHECKOUT ADDRESSES
         [HttpGet("checkout-addresses")]
         public async Task<IActionResult> GetCheckoutAddresses()
         {
             var userId = GetUserIdFromCookie();
 
+            if (userId == null)
+            {
+                return Unauthorized(new ApiResponseDto<object>(
+                    StatusCodes.Status401Unauthorized,
+                    false,
+                    "User not authenticated",
+                    null
+                ));
+            }
+
             var addresses = await _addressService.GetCheckoutAddressesAsync(userId);
 
-            return Ok(addresses);
+            return Ok(new ApiResponseDto<List<AddressCheckoutDto>>(
+                StatusCodes.Status200OK,
+                true,
+                "Checkout addresses fetched",
+                addresses
+            ));
         }
 
-        // READ USERID FROM COOKIE
         private long GetUserIdFromCookie()
         {
             var userIdClaim = User.FindFirst("UserId")?.Value;
