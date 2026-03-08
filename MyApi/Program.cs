@@ -57,8 +57,10 @@ builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-builder.Services.AddScoped<IUserRepository, UserRepository>();
-builder.Services.AddScoped<IUserServices, UserService>();
+
+builder.Services.AddScoped(typeof(IGenericRepository<>),typeof(GenericRepository<>));
+
+builder.Services.AddScoped<IUserAuthServices, UserAuthService>();
 builder.Services.AddScoped<IDbConnection>(sp =>
     new SqlConnection(builder.Configuration.GetConnectionString("DefaultConnection")));
 
@@ -108,12 +110,13 @@ var configuration = builder.Configuration;
 var app = builder.Build();
 
 app.UseMiddleware<CredentialValidation>();
-app.UseMiddleware<AuthException>();
+app.UseMiddleware<GlobalException>();
 
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
+    app.UseDeveloperExceptionPage();
 }
 
 app.UseHttpsRedirection();

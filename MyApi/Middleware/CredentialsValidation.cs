@@ -40,15 +40,28 @@ namespace Marqelle.Api.Middleware
                         return;
                     }
 
+                    if (!Regex.IsMatch(firstName, @"^[A-Za-z][A-Za-z\s]*$"))
+                    {
+                        await WriteResponse(context, 400, "First name must start with a letter and contain only letters and spaces");
+                        return;
+                    }
+
+
                     if (string.IsNullOrWhiteSpace(lastName))
                     {
                         await WriteResponse(context, 400, "Last name is required");
                         return;
                     }
 
-                    if (!Regex.IsMatch(email ?? "", @"^[^@\s]+@[^@\s]+\.[^@\s]+$"))
+                    if (!Regex.IsMatch(lastName, @"^[A-Za-z][A-Za-z\s]*$"))
                     {
-                        await WriteResponse(context, 400, "Invalid email format");
+                        await WriteResponse(context, 400, "Last name must start with a letter and contain only letters and spaces");
+                        return;
+                    }
+
+                    if (!Regex.IsMatch(email ?? "", @"^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$"))
+                    {
+                        await WriteResponse(context, 400, "Email must be valid and in lowercase");
                         return;
                     }
 

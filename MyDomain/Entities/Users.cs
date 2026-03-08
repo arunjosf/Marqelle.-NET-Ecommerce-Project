@@ -15,7 +15,7 @@ namespace Marqelle.Domain.Entities
         public string Password { get; set; }
         public bool Blocked { get; set; }
         public string Status { get; set; }
-        public string RefreshToken { get; set; }
+        public string? RefreshToken { get; set; }
         public DateTime? RefreshTokenExpiryTime { get; set; }
         public int RoleId { get; set; }
         public ICollection<Address> Addresses { get; set; }

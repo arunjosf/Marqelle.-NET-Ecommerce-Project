@@ -53,7 +53,6 @@ namespace Marqelle.Infrastructure.Data
                 .HasForeignKey(c => c.ProductId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-
             modelBuilder.Entity<Wishlist>()
                 .HasOne(p => p.Product)
                 .WithMany(p => p.Wishlists)

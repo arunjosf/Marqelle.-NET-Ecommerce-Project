@@ -13,11 +13,11 @@ namespace Marqelle.Api.Controllers
     [ApiController] 
     public class UsersAuthController : ControllerBase
     {
-        private readonly IUserServices _userService;
+        private readonly IUserAuthServices _userService;
         private readonly IJwtService _jwtService;
         private readonly IPasswordService _passwordService;
 
-        public UsersAuthController(IUserServices userService, IJwtService jwtService, IPasswordService passwordService)
+        public UsersAuthController(IUserAuthServices userService, IJwtService jwtService, IPasswordService passwordService)
         {
             _userService = userService;
             _jwtService = jwtService;
@@ -25,7 +25,7 @@ namespace Marqelle.Api.Controllers
         }
 
         [HttpPost("register")]
-        public ActionResult Register([FromForm] RegisterRequestDto dto) 
+        public async Task<ActionResult> Register([FromForm] RegisterRequestDto dto) 
         {
             if (!ModelState.IsValid)
             {
@@ -45,7 +45,7 @@ namespace Marqelle.Api.Controllers
                 ));
             }
 
-            var createdUser = _userService.Register(dto);
+            var createdUser = await _userService.Register(dto);
 
             return Ok(new ApiResponseDto<object>(
                StatusCodes.Status200OK,
@@ -57,9 +57,9 @@ namespace Marqelle.Api.Controllers
 
 
         [HttpPost("login")]
-        public ActionResult Login([FromForm] LoginRequestDto request)
+        public async Task<ActionResult> Login([FromForm] LoginRequestDto request)
         {
-            var user = _userService.Login(request.Email, request.Password);
+            var user = await _userService.Login(request.Email, request.Password);
             if (user == null)
             {
                 return Unauthorized(new ApiResponseDto<object>(
@@ -76,7 +76,7 @@ namespace Marqelle.Api.Controllers
 
             var hashedToken = _passwordService.Hash(refreshToken, user);
             var refreshTokenExpiry = DateTime.UtcNow.AddDays(7);
-            _userService.UpdateRefreshToken(user.Id, hashedToken, refreshTokenExpiry);
+            await _userService.UpdateRefreshToken(user.Id, hashedToken, refreshTokenExpiry);
 
             var accessCookieOptions = new CookieOptions
             {
@@ -110,7 +110,7 @@ namespace Marqelle.Api.Controllers
 
         [Authorize]
         [HttpPost("logout")]
-        public ActionResult LogOut()
+        public async Task<ActionResult> LogOut()
         {
             var UserIdclaim = User.FindFirst("UserId");
 
@@ -125,7 +125,7 @@ namespace Marqelle.Api.Controllers
             }
 
             var userId = long.Parse(UserIdclaim.Value);
-            _userService.LogOut(userId);
+           await _userService.LogOut(userId);
             Response.Cookies.Delete("accessToken");
             Response.Cookies.Delete("refreshToken");
 
@@ -138,7 +138,7 @@ namespace Marqelle.Api.Controllers
         }
 
         [HttpPost("refresh")]
-        public ActionResult Refresh()
+        public async Task<ActionResult> Refresh()
         {
             var refreshToken = Request.Cookies["refreshToken"] ?? "";
             refreshToken = Uri.UnescapeDataString(refreshToken);
@@ -153,7 +153,7 @@ namespace Marqelle.Api.Controllers
                 ));
             }
 
-            var user = _userService.ValidateRefreshToken(refreshToken);
+            var user = await _userService.ValidateRefreshToken(refreshToken);
 
             if (user == null)
             {

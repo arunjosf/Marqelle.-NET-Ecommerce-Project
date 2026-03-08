@@ -11,7 +11,6 @@ namespace Marqelle.Domain.Entities
         public long Id { get; set; }
         public long OrderId { get; set; }
         public Orders Order { get; set; }
-
         public long ProductId { get; set; }
         public Products Product { get; set; }
         public int Quantity { get; set; }
