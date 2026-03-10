@@ -3,11 +3,11 @@ using System.Text.Json;
 
 namespace Marqelle.Api.Middleware
 {
-    public class GlobalException
+    public class GlobalResponse
     {
         private readonly RequestDelegate _next;
 
-        public GlobalException(RequestDelegate next)
+        public GlobalResponse(RequestDelegate next)
         {
             _next = next;
         }

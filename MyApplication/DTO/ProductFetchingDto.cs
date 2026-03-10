@@ -13,7 +13,7 @@ namespace Marqelle.Application.DTO
         public string Description { get; set; }
         public decimal Price { get; set; }
         public string Color { get; set; }
-        public bool InStock { get; set; }
+        public string? StockInfo { get; set; }
         public string CategoryName { get; set; }
         public List<string> Sizes { get; set; }
         public List<string> Images { get; set; }

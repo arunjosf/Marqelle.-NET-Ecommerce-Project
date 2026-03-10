@@ -14,12 +14,12 @@ namespace Marqelle.Domain.Entities
         public decimal price { get; set; }
         public double Rating    { get; set; }
         public string Color { get; set; }
-        public bool InStock { get; set; }
+        
 
         public long CategoryId { get; set; }
         public ProductsCategory Category { get; set; }
 
-        public ICollection <ProductSize> Sizes { get; set; }
+        public ICollection<ProductSizeAndStock> Stocks { get; set; }
         public ICollection<ProductsImage> Images { get; set; }
         public ICollection<Cart> Carts  { get; set; }
         public ICollection<Wishlist> Wishlists { get; set; }

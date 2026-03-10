@@ -14,17 +14,22 @@ namespace Marqelle.Application.Services
 {
     public class WishlistService : IWishlistService
     {
-        private readonly IWishlistRepository _wishlistRepository;
+        private readonly IGenericRepository<Wishlist> _wishlistRepository;
 
-        public WishlistService(IWishlistRepository _wishlistRepository)
+        public WishlistService(IGenericRepository<Wishlist> wishlistRepository)
         {
-            this._wishlistRepository = _wishlistRepository;
+            _wishlistRepository = wishlistRepository;
         }
 
         public async Task AddToWishlistAsync(long userId, long productId)
         {
-            var exists = await _wishlistRepository.ExistsAsync(userId, productId);
-            if (exists) return;
+            var userWishlists = await _wishlistRepository.GetAllAsync(w => w.Product, w => w.Product.Images);
+            
+            var exists = userWishlists.FirstOrDefault(w => w.UserId == userId && w.ProductId == productId
+                                                                           && w.Product != null);
+
+            if (exists != null)
+                throw new Exception("Item already in wishlist");
 
             var wishlist = new Wishlist
             {
@@ -32,32 +37,39 @@ namespace Marqelle.Application.Services
                 ProductId = productId
             };
 
-            await _wishlistRepository.AddWishlistAsync(wishlist);
+            await _wishlistRepository.AddAsync(wishlist);
+            await _wishlistRepository.SaveAsync();
         }
 
         public async Task RemoveFromWishlistAsync(long userId, long productId)
         {
-            var item = await _wishlistRepository.GetWishlistAsync(userId, productId);
+            var wishlists = await _wishlistRepository.GetAllAsync();
+
+            var item = wishlists
+                .Where(w => w != null) 
+                .FirstOrDefault(w => w.UserId == userId && w.ProductId == productId);
+
             if (item != null)
-                await _wishlistRepository.RemoveWishlistAsync(item);
+                _wishlistRepository.Delete(item); 
+            await _wishlistRepository.SaveAsync();
         }
+
 
         public async Task<List<WishlistDto>> GetUserWishlistAsync(long userId)
         {
-            var wishlists = await _wishlistRepository.GetUserWishlistAsync(userId);
+            var wishlists = await _wishlistRepository.GetAllAsync(w => w.Product, w => w.Product.Images);
 
-            
             return wishlists
-           .Where(w => w.Product != null)
-           .Select(w => new WishlistDto
-           {
-               WishlistId = w.Id,
-               ProductId = w.ProductId,
-               ProductName = w.Product?.Name ?? "Unknown",
-               ProductImage = w.Product.Images?.Select(i => i.ImageUrl).FirstOrDefault() ?? "",
-               ProductPrice = w.Product?.price ?? 0
-           })
-           .ToList();
+                .Where(w => w.UserId == userId)
+                .Select(w => new WishlistDto
+                {
+                    WishlistId = w.Id,
+                    ProductId = w.ProductId,
+                    ProductName = w.Product.Name,
+                    ProductPrice = w.Product.price,
+                    ProductImage = w.Product.Images.Select(i => i.ImageUrl).FirstOrDefault()
+                })
+                .ToList();
         }
     }
 }

@@ -47,7 +47,7 @@ namespace Marqelle.Api.Controllers
                         product.Description,
                         product.price,
                         product.Color,
-                        product.InStock,
+                        product.Stocks,
                         Category = dto.Category,
                         Sizes = dto.Sizes,
                         Images = dto.ImageUrls,

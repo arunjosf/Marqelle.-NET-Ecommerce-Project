@@ -32,7 +32,7 @@ namespace Marqelle.Application.DTO
         public string Description { get; set; }
         [Required(ErrorMessage = "Enter Rating.")]
         public double Rating { get; set; }
-        [Required(ErrorMessage = "Enter Stock Status")]
-        public bool InStock { get; set; } = true;
+        [Required(ErrorMessage = "Enter Stock")]
+        public List<int> Stocks { get; set; } = new List<int>();
     }
 }

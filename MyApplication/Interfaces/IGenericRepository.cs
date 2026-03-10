@@ -9,12 +9,12 @@ namespace Marqelle.Application.Interfaces
 {
      public interface IGenericRepository<T> where T : class
     {
-        Task<IEnumerable<T>> GetAllAsync();
-        Task<T?> GetByIdAsync(long id);
+        Task<IEnumerable<T>> GetAllAsync(params Expression<Func<T, object>>[] includes);
+        Task<T?> GetByIdAsync(long id, params Expression<Func<T, object>>[] includes);
         Task<T?> FindAsync(Expression<Func<T, bool>> predicate);
         Task AddAsync(T entity);
-        void UpdateAsync(T entity);
-        void DeleteAsync(T entity);
+        void Update(T entity);
+        void Delete(T entity);
         Task SaveAsync();
     }
 }

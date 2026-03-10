@@ -23,7 +23,12 @@ namespace Marqelle.Application.Services
             var existingUser = users.FirstOrDefault(u => u.Email == dto.Email);
 
             if (existingUser != null)
-                throw new Exception("Email already exists");
+                throw new Exception("User already Registered");
+
+            if (dto.Password != dto.ConfirmPassword)
+            {
+                throw new Exception("Pasword and Confrom Password must be same");
+            }
 
             var user = new Users
             {
@@ -82,7 +87,7 @@ namespace Marqelle.Application.Services
             user.RefreshToken = refreshToken;
             user.RefreshTokenExpiryTime = expiry;
 
-            _repository.UpdateAsync(user);
+            _repository.Update(user);
             await _repository.SaveAsync();
         }
 
@@ -123,7 +128,7 @@ namespace Marqelle.Application.Services
             user.RefreshToken = null;
             user.RefreshTokenExpiryTime = null;
 
-            _repository.UpdateAsync(user);
+            _repository.Update(user);
             await _repository.SaveAsync();
         }
     }

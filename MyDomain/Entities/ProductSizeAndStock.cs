@@ -6,12 +6,12 @@ using System.Threading.Tasks;
 
 namespace Marqelle.Domain.Entities
 {
-    public class ProductSize
+    public class ProductSizeAndStock
     {
         public long Id { get; set; }
-        public string Size  { get; set; }
         public long ProductId { get; set; }
-        public Products Product {  get; set; }
-
+        public string Size { get; set; }  
+        public int Stock { get; set; }       
+        public Products Product { get; set; }
     }
 }

@@ -33,7 +33,7 @@ namespace Marqelle.Api.Controllers
         
 
         [HttpPost("add")]
-        public async Task<IActionResult> AddToWishlist([FromBody] WishlistRequest request)
+        public async Task<IActionResult> AddToWishlist([FromForm] WishlistRequest request)
         {
             var userId = GetUserIdFromToken();
             await _wishlistService.AddToWishlistAsync(userId, request.ProductId);
@@ -50,7 +50,7 @@ namespace Marqelle.Api.Controllers
         }
 
         [HttpDelete("Delete")]
-        public async Task<IActionResult> RemoveFromWishlist([FromBody] WishlistRequest request)
+        public async Task<IActionResult> RemoveFromWishlist([FromForm] WishlistRequest request)
         {
             var userId = GetUserIdFromToken();
 

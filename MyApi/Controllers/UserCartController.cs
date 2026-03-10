@@ -77,7 +77,6 @@ namespace Marqelle.Api.Controllers
                 ));
             }
 
-
             var cart = await _service
                 .GetUserCart(userId);
 
@@ -89,57 +88,22 @@ namespace Marqelle.Api.Controllers
            ));
         }
 
-        [HttpPut("increaseQty/{cartId}")]
-        public async Task<ActionResult> IncreaseQuantity(long cartId)
+
+        [HttpPut("updateQuantity/{cartId}")]
+        public async Task<ActionResult> UpdateCartQuantity(long cartId, int quantity)
         {
             var userId = GetUserId();
 
-            if (userId == null)
-            {
-                return Unauthorized(new ApiResponseDto<object>(
-                    StatusCodes.Status401Unauthorized,
-                    false,
-                    "User not authenticated",
-                    null
-                ));
-            }
-
-            var result = await _service
-                .IncreaseQuantity(cartId);
+            var result = await _service.UpdateCartQuantity(cartId, quantity);
 
             return Ok(new ApiResponseDto<object>(
                 StatusCodes.Status200OK,
                 true,
-                "Quantity increased",
+                "Cart quantity updated",
                 result
             ));
         }
 
-        [HttpPut("decreaseQty/{cartId}")]
-        public async Task<ActionResult> DecreaseQuantity(long cartId)
-        {
-            var userId = GetUserId();
-
-            if (userId == null)
-            {
-                return Unauthorized(new ApiResponseDto<object>(
-                    StatusCodes.Status401Unauthorized,
-                    false,
-                    "User not authenticated",
-                    null
-                ));
-            }
-
-            var result = await _service
-                .DecreaseQuantity(cartId);
-
-            return Ok(new ApiResponseDto<object>(
-                StatusCodes.Status200OK,
-                true,
-                "Quantity decreased",
-                result
-            ));
-        }
 
         [HttpDelete("remove/{cartId}")]
         public async Task<ActionResult> RemoveFromCart(long cartId)

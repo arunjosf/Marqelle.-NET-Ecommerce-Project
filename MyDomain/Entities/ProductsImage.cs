@@ -10,7 +10,6 @@ namespace Marqelle.Domain.Entities
     {
         public long Id { get; set; }
         public string ImageUrl { get; set; }
-
         public long ProductId { get; set; }
         public Products Product { get; set; }
 

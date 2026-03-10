@@ -4,6 +4,7 @@ using Marqelle.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Marqelle.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260310081557_UpdateProductStock")]
+    partial class UpdateProductStock
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -199,7 +202,7 @@ namespace Marqelle.Infrastructure.Migrations
                     b.ToTable("Payments");
                 });
 
-            modelBuilder.Entity("Marqelle.Domain.Entities.ProductSizeAndStock", b =>
+            modelBuilder.Entity("Marqelle.Domain.Entities.ProductSize", b =>
                 {
                     b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
@@ -212,17 +215,13 @@ namespace Marqelle.Infrastructure.Migrations
 
                     b.Property<string>("Size")
                         .IsRequired()
-                        .HasMaxLength(5)
-                        .HasColumnType("nvarchar(5)");
-
-                    b.Property<int>("Stock")
-                        .HasColumnType("int");
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
 
                     b.HasIndex("ProductId");
 
-                    b.ToTable("SizeAndStocks");
+                    b.ToTable("ProductSizes");
                 });
 
             modelBuilder.Entity("Marqelle.Domain.Entities.Products", b =>
@@ -250,6 +249,9 @@ namespace Marqelle.Infrastructure.Migrations
 
                     b.Property<double>("Rating")
                         .HasColumnType("float");
+
+                    b.Property<int>("Stock")
+                        .HasColumnType("int");
 
                     b.Property<decimal>("price")
                         .HasColumnType("decimal(18,2)");
@@ -445,10 +447,10 @@ namespace Marqelle.Infrastructure.Migrations
                     b.Navigation("Order");
                 });
 
-            modelBuilder.Entity("Marqelle.Domain.Entities.ProductSizeAndStock", b =>
+            modelBuilder.Entity("Marqelle.Domain.Entities.ProductSize", b =>
                 {
                     b.HasOne("Marqelle.Domain.Entities.Products", "Product")
-                        .WithMany("Stocks")
+                        .WithMany("Sizes")
                         .HasForeignKey("ProductId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -512,7 +514,7 @@ namespace Marqelle.Infrastructure.Migrations
 
                     b.Navigation("OrderItems");
 
-                    b.Navigation("Stocks");
+                    b.Navigation("Sizes");
 
                     b.Navigation("Wishlists");
                 });

@@ -18,5 +18,8 @@ namespace Marqelle.Application.DTO
         public decimal TotalPrice => ProductPrice * Quantity;
         public decimal TotalCartPrice { get; set; }
         public int TotalCartQuantity { get; set; }
+        public string? StockWarning { get; set; }
+        public bool IsOutOfStock { get; set; }
+
     }
 }

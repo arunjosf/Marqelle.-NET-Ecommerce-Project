@@ -92,13 +92,10 @@ builder.Services.AddControllers()
         options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
     });
 
-builder.Services.AddScoped<IUserProductRepository, UserProductRepository>();
 builder.Services.AddScoped<IUserProductService, UserProductService>();
-builder.Services.AddScoped<IAdminProductService, AdminProductService>();
+//builder.Services.AddScoped<IAdminProductService, AdminProductService>();
 builder.Services.AddScoped<IAdminProductRepository, AdminProductRepository>();
-builder.Services.AddScoped<IUserCartRepository, UserCartRepository>();
 builder.Services.AddScoped<IUserCartService, UserCartService>();
-builder.Services.AddScoped<IWishlistRepository, WishlistRepository>();
 builder.Services.AddScoped<IWishlistService, WishlistService>();
 builder.Services.AddScoped<IAddressRepository, AddressRepository>();
 builder.Services.AddScoped<IAddressService, AddressService>();
@@ -110,13 +107,13 @@ var configuration = builder.Configuration;
 var app = builder.Build();
 
 app.UseMiddleware<CredentialValidation>();
-app.UseMiddleware<GlobalException>();
+app.UseMiddleware<GlobalResponse>();
 
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
-    app.UseDeveloperExceptionPage();
+    //app.UseDeveloperExceptionPage();
 }
 
 app.UseHttpsRedirection();

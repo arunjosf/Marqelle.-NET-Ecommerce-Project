@@ -16,14 +16,34 @@ public class GenericRepository<T> : IGenericRepository<T> where T : class
         _dbSet = context.Set<T>();
     }
 
-    public async Task<IEnumerable<T>> GetAllAsync()
+    public async Task<IEnumerable<T>> GetAllAsync(params Expression<Func<T, object>>[] includes)
     {
-        return await _dbSet.ToListAsync();
+        IQueryable<T> query = _dbSet;
+
+        if (includes != null && includes.Length > 0)
+        {
+            foreach (var include in includes)
+            {
+                query = query.Include(include);
+            }
+        }
+
+        return await query.ToListAsync();
     }
 
-    public async Task<T?> GetByIdAsync(long id)
+    public async Task<T?> GetByIdAsync(long id, params Expression<Func<T, object>>[] includes)
     {
-        return await _dbSet.FindAsync(id);
+        IQueryable<T> query = _dbSet;
+
+        if (includes != null && includes.Length > 0)
+        {
+            foreach (var include in includes)
+            {
+                query = query.Include(include);
+            }
+        }
+
+        return await query.FirstOrDefaultAsync(e => EF.Property<long>(e, "Id") == id);
     }
 
     public async Task<T?> FindAsync(Expression<Func<T, bool>> predicate)
@@ -36,12 +56,12 @@ public class GenericRepository<T> : IGenericRepository<T> where T : class
         await _dbSet.AddAsync(entity);
     }
 
-    public void UpdateAsync(T entity)
+    public void Update(T entity)
     {
         _dbSet.Update(entity);
     }
 
-    public void DeleteAsync(T entity)
+    public void Delete(T entity)
     {
         _dbSet.Remove(entity);
     }

@@ -11,111 +11,156 @@ namespace Marqelle.Application.Services
 {
     public class UserCartService : IUserCartService
     {
-        private readonly IUserCartRepository _repository;
-        public UserCartService(IUserCartRepository repository)
+        private readonly IGenericRepository<Cart> _cartRepository;
+        private readonly IGenericRepository<ProductSizeAndStock> _stockRepository;
+        public UserCartService(IGenericRepository<Cart> cartRespository, IGenericRepository<ProductSizeAndStock> stockRepository)
         {
-            _repository = repository;
+            _cartRepository = cartRespository;
+            _stockRepository = stockRepository;
         }
 
         public async Task<Cart> AddToCart(long userId, long productId, string size)
         {
-            var existItem = await _repository
-                .GetCartItemByProductAsync(userId, productId, size);
+            if (string.IsNullOrWhiteSpace(size))
+                throw new Exception("Please select a size");
 
-            if (existItem != null)
-            {
-                return null;
-            }
+            size = size.Trim().ToUpper();
+
+            var stock = await _stockRepository.FindAsync(s =>
+            s.ProductId == productId &&
+            s.Size.ToUpper() == size);
+
+            if (stock == null)
+                throw new Exception("Selected size is not available for this product");
+
+            if (stock.Stock <= 0)
+                throw new Exception("Selected size is out of stock");
+
+            var existingCart = await _cartRepository.FindAsync(c =>
+                c.UserId == userId &&
+                c.ProductId == productId &&
+                c.Size == size);
+
+            if (existingCart != null)
+                throw new Exception("This product with the selected size is already in your cart");
 
             var cartItem = new Cart
             {
                 UserId = userId,
                 ProductId = productId,
-                Quantity = 1,
-                Size = size
+                Size = size,
+                Quantity = 1
             };
 
-            await _repository.AddToCartAsync(cartItem);
-            await _repository.SaveChangesAsync();
+            await _cartRepository.AddAsync(cartItem);
+            await _cartRepository.SaveAsync();
+
             return cartItem;
         }
+
         public async Task<List<UserCartDto>> GetUserCart(long userId)
         {
-            var cartItems = await _repository
-                .GetAllCartByUserIdAsync(userId);
+            var cartItems = await _cartRepository
+                .GetAllAsync(c => c.Product, c => c.Product.Images);
 
-            var cartDto = cartItems.Select(c => new UserCartDto
+            var userCart = cartItems
+                .Where(c => c.UserId == userId)
+                .ToList();
+
+            var cartDto = new List<UserCartDto>();
+
+            foreach (var c in userCart)
             {
-                CartId = c.Id,
-                ProductId = c.ProductId,
-                ProductName = c.Product.Name,
-                ProductImage = c.Product.Images.Select(i => i.ImageUrl).FirstOrDefault(),
-                ProductPrice = c.Product.price,
-                Quantity = c.Quantity,
-                Size = c.Size
-            }).ToList();
+                var stock = await _stockRepository.FindAsync(s =>
+                    s.ProductId == c.ProductId &&
+                    s.Size == c.Size);
+
+                bool isOutOfStock = stock == null || stock.Stock == 0;
+                string? warning = null;
+
+                if (stock != null && stock.Stock < 5 && stock.Stock > 0)
+                {
+                    warning = $"Only {stock.Stock} items left";
+                }
+
+                cartDto.Add(new UserCartDto
+                {
+                    CartId = c.Id,
+                    ProductId = c.ProductId,
+                    ProductName = c.Product.Name,
+                    ProductImage = c.Product.Images.Select(i => i.ImageUrl).FirstOrDefault(),
+                    ProductPrice = c.Product.price,
+                    Quantity = c.Quantity,
+                    Size = c.Size,
+                    StockWarning = warning,
+                    IsOutOfStock = isOutOfStock,
+                });
+            }
 
             var totalPrice = cartDto.Sum(x => x.TotalPrice);
-            var totalQuantity = cartDto.Sum(x => x.TotalCartQuantity);
+            var totalQuantity = cartDto.Sum(x => x.Quantity);
 
             foreach (var item in cartDto)
             {
                 item.TotalCartPrice = totalPrice;
                 item.TotalCartQuantity = totalQuantity;
             }
+
             return cartDto;
         }
 
-        public async Task<string> IncreaseQuantity(long cartId)
+        public async Task<Cart> UpdateCartQuantity(long cartId, int quantity)
         {
-            var item = await _repository.GetCartItemByIdAsync(cartId);
+            if (quantity < 1)
+                throw new Exception("Quantity cannot be less than 1");
 
-            if (item == null)
-                return "Item is not in the cart";
+            var cartItem = await _cartRepository.GetByIdAsync(cartId);
 
-            item.Quantity += 1;
+            if (cartItem == null)
+                throw new Exception("Cart item not found");
 
-            _repository.UpdateCartItemAsync(item);
-            await _repository.SaveChangesAsync();
+            var stock = await _stockRepository.FindAsync(s =>
+                s.ProductId == cartItem.ProductId &&
+                s.Size == cartItem.Size);
 
-            return "Successfully Increased Quantity";
-        }
-        public async Task<string> DecreaseQuantity(long cartId)
-        {
-            var item = await _repository.GetCartItemByIdAsync(cartId);
+            if (stock == null)
+                throw new Exception("Stock not found");
 
-            if (item == null)
-                return "Cart item not found.";
+            if (quantity > stock.Stock)
+                throw new Exception($"Only {stock.Stock} items available");
 
-            if (item.Quantity <= 1)
-                return "Quantity cannot be less than 1.";
+            cartItem.Quantity = quantity;
 
-            item.Quantity -= 1;
-
-            _repository.UpdateCartItemAsync(item);
-            await _repository.SaveChangesAsync();
-
-            return "Quantity decreased.";
-
+            _cartRepository.Update(cartItem);
+            await _cartRepository.SaveAsync();
+            return cartItem;
         }
 
         public async Task<string> RemoveCart(long cartId)
         {
-            var item = await _repository.GetCartItemByIdAsync(cartId);
+            var item = await _cartRepository.GetByIdAsync(cartId);
 
             if (item == null)
                 return "Cart item not found.";
 
-            _repository.RemoveCartItemAsync(item);
-            await _repository.SaveChangesAsync();
+            _cartRepository.Delete(item);
+            await _cartRepository.SaveAsync();
 
             return "Item removed from cart.";
         }
 
         public async Task<string> ClearAllCart(long userId)
         {
-            await _repository.ClearUserAllCartAsync(userId);
-            await _repository.SaveChangesAsync();
+            var carts = await _cartRepository.GetAllAsync();
+
+            var userCarts = carts.Where(c => c.UserId == userId).ToList();
+
+            foreach (var cart in userCarts)
+            {
+                _cartRepository.Delete(cart);
+            }
+
+            await _cartRepository.SaveAsync();
 
             return "Cart cleared successfully.";
         }

@@ -22,16 +22,14 @@ namespace Marqelle.Infrastructure.Services
             {
                 var jwtSettings = _configuration.GetSection("jwt");
                 var key = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(jwtSettings["key"]));
-                var roleName = user.RoleId == 1 ? "User" : "Admin";
-
                 var tokenDescriptor = new SecurityTokenDescriptor
 
                 {
                     Subject = new ClaimsIdentity(new[]
                         {
-                    new Claim("UserId",user.Id.ToString()),
-                    new Claim(ClaimTypes.Email, user.Email),
-                    new Claim(ClaimTypes.Role, roleName)
+                   new Claim("UserId", user.Id.ToString(), ClaimValueTypes.Integer64),
+                   new Claim(ClaimTypes.Email, user.Email),
+                   new Claim(ClaimTypes.Role, user.RoleId.ToString(), ClaimValueTypes.Integer)
 
                 }),
                     Expires = DateTime.UtcNow.AddMinutes(Convert.ToDouble(jwtSettings["DurationMinutes"])),

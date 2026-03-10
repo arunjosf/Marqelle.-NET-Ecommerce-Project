@@ -12,8 +12,7 @@ namespace Marqelle.Application.Interfaces
     {
         Task<Cart> AddToCart(long userId, long productId, string size);
         Task<List<UserCartDto>> GetUserCart(long userId);
-        Task<string> IncreaseQuantity(long cartId);
-        Task<string> DecreaseQuantity(long cartId);
+        Task<Cart> UpdateCartQuantity(long cartId, int quantity);
         Task<string> RemoveCart(long cartId);
         Task<string> ClearAllCart(long userId);
     }

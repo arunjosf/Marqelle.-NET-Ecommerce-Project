@@ -45,14 +45,26 @@ namespace Marqelle.Api.Controllers
                 ));
             }
 
-            var createdUser = await _userService.Register(dto);
+            try
+            {
+                var createdUser = await _userService.Register(dto);
 
-            return Ok(new ApiResponseDto<object>(
-               StatusCodes.Status200OK,
-               true,
-               "User registered successfully",
-               createdUser
-           ));
+                return Ok(new ApiResponseDto<object>(
+                    StatusCodes.Status200OK,
+                    true,
+                    "User registered successfully",
+                    createdUser
+                ));
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new ApiResponseDto<object>(
+                    StatusCodes.Status400BadRequest,
+                    false,
+                    ex.Message,
+                    null
+                ));
+            }
         }
 
 

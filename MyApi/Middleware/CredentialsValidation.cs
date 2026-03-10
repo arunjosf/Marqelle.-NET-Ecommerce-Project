@@ -59,9 +59,9 @@ namespace Marqelle.Api.Middleware
                         return;
                     }
 
-                    if (!Regex.IsMatch(email ?? "", @"^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$"))
+                    if (!Regex.IsMatch(email ?? "", @"^[A-Za-z][A-Za-z0-9._%+-]*@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$"))
                     {
-                        await WriteResponse(context, 400, "Email must be valid and in lowercase");
+                        await WriteResponse(context, 400, "Invalid email format");
                         return;
                     }
 

@@ -4,6 +4,7 @@ using Marqelle.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Marqelle.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260310095309_UpdateProductsSizeStock")]
+    partial class UpdateProductsSizeStock
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -199,7 +202,29 @@ namespace Marqelle.Infrastructure.Migrations
                     b.ToTable("Payments");
                 });
 
-            modelBuilder.Entity("Marqelle.Domain.Entities.ProductSizeAndStock", b =>
+            modelBuilder.Entity("Marqelle.Domain.Entities.ProductSize", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<long>("ProductId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("Size")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProductId");
+
+                    b.ToTable("ProductSizes");
+                });
+
+            modelBuilder.Entity("Marqelle.Domain.Entities.ProductStock", b =>
                 {
                     b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
@@ -222,7 +247,7 @@ namespace Marqelle.Infrastructure.Migrations
 
                     b.HasIndex("ProductId");
 
-                    b.ToTable("SizeAndStocks");
+                    b.ToTable("Stocks");
                 });
 
             modelBuilder.Entity("Marqelle.Domain.Entities.Products", b =>
@@ -445,7 +470,18 @@ namespace Marqelle.Infrastructure.Migrations
                     b.Navigation("Order");
                 });
 
-            modelBuilder.Entity("Marqelle.Domain.Entities.ProductSizeAndStock", b =>
+            modelBuilder.Entity("Marqelle.Domain.Entities.ProductSize", b =>
+                {
+                    b.HasOne("Marqelle.Domain.Entities.Products", "Product")
+                        .WithMany("Sizes")
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Product");
+                });
+
+            modelBuilder.Entity("Marqelle.Domain.Entities.ProductStock", b =>
                 {
                     b.HasOne("Marqelle.Domain.Entities.Products", "Product")
                         .WithMany("Stocks")
@@ -511,6 +547,8 @@ namespace Marqelle.Infrastructure.Migrations
                     b.Navigation("Images");
 
                     b.Navigation("OrderItems");
+
+                    b.Navigation("Sizes");
 
                     b.Navigation("Stocks");
 

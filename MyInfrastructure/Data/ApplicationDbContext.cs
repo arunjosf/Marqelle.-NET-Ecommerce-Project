@@ -17,13 +17,13 @@ namespace Marqelle.Infrastructure.Data
         public DbSet<ProductsImage> Images { get; set; }
         public DbSet<Cart> Carts { get; set; }
         public DbSet<Wishlist> Wishlists { get; set; }
-        public DbSet<ProductSize> ProductSizes { get; set; }
         public DbSet<Orders> Orders { get; set; }
         public DbSet<OrderItems> OrderItems { get; set; }
         public DbSet<Payments> Payments { get; set; }
         public DbSet<Users> Users { get; set; }
         public DbSet<Role> Role { get; set; }
         public DbSet<Address> Addresses { get; set; }
+        public DbSet<ProductSizeAndStock> SizeAndStocks { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -38,12 +38,6 @@ namespace Marqelle.Infrastructure.Data
             modelBuilder.Entity<ProductsImage>()
                 .HasOne(i => i.Product)
                 .WithMany(p => p.Images)
-                .HasForeignKey(p => p.ProductId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            modelBuilder.Entity<ProductSize>()
-                .HasOne(p => p.Product)
-                .WithMany(s => s.Sizes)
                 .HasForeignKey(p => p.ProductId)
                 .OnDelete(DeleteBehavior.Cascade);
 
@@ -94,6 +88,22 @@ namespace Marqelle.Infrastructure.Data
                 .WithMany(u => u.Addresses)
                 .HasForeignKey(a => a.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<ProductSizeAndStock>()
+                .HasOne(pss => pss.Product)
+                .WithMany(p => p.Stocks)
+                .HasForeignKey(pss => pss.ProductId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            
+            modelBuilder.Entity<ProductSizeAndStock>()
+                .Property(pss => pss.Size)
+                .IsRequired()
+                .HasMaxLength(5);
+
+            modelBuilder.Entity<ProductSizeAndStock>()
+                .Property(pss => pss.Stock)
+                .IsRequired();
         }
     }
 }
