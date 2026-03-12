@@ -1,6 +1,7 @@
 ﻿using Marqelle.Application.DTO;
 using Marqelle.Application.Interfaces;
 using Marqelle.Application.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -8,6 +9,7 @@ namespace Marqelle.Api.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class AddressController : ControllerBase
     {
         private readonly IAddressService _addressService;
@@ -184,56 +186,6 @@ namespace Marqelle.Api.Controllers
                "Address deleted successfully",
                null
            ));
-        }
-
-        [HttpGet("checkout-address")]
-        public async Task<IActionResult> GetCheckoutAddress()
-        {
-            var userId = GetUserIdFromCookie();
-
-            if (userId == null)
-            {
-                return Unauthorized(new ApiResponseDto<object>(
-                    StatusCodes.Status401Unauthorized,
-                    false,
-                    "User not authenticated",
-                    null
-                ));
-            }
-
-            var address = await _addressService.GetCheckoutAddressAsync(userId);
-
-            return Ok(new ApiResponseDto<AddressCheckoutDto>(
-               StatusCodes.Status200OK,
-               true,
-               "Checkout address fetched",
-               address
-               ));
-        }
-
-        [HttpGet("checkout-addresses")]
-        public async Task<IActionResult> GetCheckoutAddresses()
-        {
-            var userId = GetUserIdFromCookie();
-
-            if (userId == null)
-            {
-                return Unauthorized(new ApiResponseDto<object>(
-                    StatusCodes.Status401Unauthorized,
-                    false,
-                    "User not authenticated",
-                    null
-                ));
-            }
-
-            var addresses = await _addressService.GetCheckoutAddressesAsync(userId);
-
-            return Ok(new ApiResponseDto<List<AddressCheckoutDto>>(
-                StatusCodes.Status200OK,
-                true,
-                "Checkout addresses fetched",
-                addresses
-            ));
         }
 
         private long GetUserIdFromCookie()

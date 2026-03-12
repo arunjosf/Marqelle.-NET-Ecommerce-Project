@@ -14,5 +14,6 @@ namespace Marqelle.Application.DTO
         public string CityStatePincode { get; set; }
         public string Country { get; set; }
         public string PhoneNumber { get; set; }
+        public bool IsDefault { get; set; }
     }
 }

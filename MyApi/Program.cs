@@ -2,7 +2,6 @@ using Marqelle.Application.Interfaces;
 using Marqelle.Application.Services;
 using Marqelle.Infrastructure.Configuration;
 using Marqelle.Infrastructure.Data;
-using Marqelle.Infrastructure.Repositories;
 using Marqelle.Infrastructure.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Data.SqlClient;
@@ -14,8 +13,9 @@ using System.Text;
 using Marqelle.Api.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
-var jwtSettings = builder.Configuration.GetSection("Jwt");
-var key = Encoding.ASCII.GetBytes(jwtSettings["Key"]);
+builder.Environment.WebRootPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
+var jwtSettings = builder.Configuration.GetSection("jwt");
+var key = Encoding.ASCII.GetBytes(jwtSettings["key"]);
 
 builder.Services.AddAuthentication(options =>
 {
@@ -92,19 +92,26 @@ builder.Services.AddControllers()
         options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
     });
 
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("AdminOnly", policy =>
+        policy.RequireClaim(ClaimTypes.Role, "2"));
+});
+
 builder.Services.AddScoped<IUserProductService, UserProductService>();
-//builder.Services.AddScoped<IAdminProductService, AdminProductService>();
-builder.Services.AddScoped<IAdminProductRepository, AdminProductRepository>();
+builder.Services.AddScoped<IAdminProductService, AdminProductService>();
 builder.Services.AddScoped<IUserCartService, UserCartService>();
 builder.Services.AddScoped<IWishlistService, WishlistService>();
-builder.Services.AddScoped<IAddressRepository, AddressRepository>();
 builder.Services.AddScoped<IAddressService, AddressService>();
 builder.Services.AddScoped<ICheckoutService, CheckoutService>();
+builder.Services.AddScoped<IUserOrderService, UserOrderService>();
+builder.Services.AddScoped<IAdminOrderService, AdminOrderService>();
 
 
 var configuration = builder.Configuration;
 
 var app = builder.Build();
+
 
 app.UseMiddleware<CredentialValidation>();
 app.UseMiddleware<GlobalResponse>();

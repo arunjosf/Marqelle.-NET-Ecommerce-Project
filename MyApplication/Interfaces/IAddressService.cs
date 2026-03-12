@@ -14,7 +14,6 @@ namespace Marqelle.Application.Interfaces
         Task<List<AddressDto>> GetUserAddress(long userId);
         Task UpdateAddressAsync(long addressId, long userId, AddressDto dto);
         Task DeleteAddress(long addressId);
-        Task<AddressCheckoutDto?> GetCheckoutAddressAsync(long userId);
-        Task<List<AddressCheckoutDto>> GetCheckoutAddressesAsync(long userId);
+        Task SetDefaultAddressAsync(long addressId, long userId);
     }
 }

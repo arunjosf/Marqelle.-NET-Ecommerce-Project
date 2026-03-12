@@ -1,5 +1,6 @@
 ﻿using Marqelle.Application.DTO;
 using Marqelle.Application.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
@@ -8,6 +9,7 @@ namespace Marqelle.Api.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class UserWishlistController : ControllerBase
     {
         private readonly IWishlistService _wishlistService;

@@ -77,7 +77,7 @@ namespace Marqelle.Infrastructure.Data
 
             modelBuilder.Entity<Orders>()
                 .Property(o => o.Status)
-                .HasConversion<int>();
+                .HasConversion<string>();
 
             modelBuilder.Entity<Payments>()
                 .Property(p => p.Status)

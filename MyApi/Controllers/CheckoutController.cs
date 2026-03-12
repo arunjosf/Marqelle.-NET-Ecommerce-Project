@@ -1,5 +1,6 @@
 ﻿using Marqelle.Application.DTO;
 using Marqelle.Application.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -7,6 +8,7 @@ namespace Marqelle.Api.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class CheckoutController : ControllerBase
     {
         private readonly ICheckoutService _checkoutService;

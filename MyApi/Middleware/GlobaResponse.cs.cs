@@ -17,6 +17,32 @@ namespace Marqelle.Api.Middleware
             try
             {
                 await _next(context);
+
+                if (!context.Response.HasStarted)
+                {
+                    if (context.Response.StatusCode == StatusCodes.Status401Unauthorized)
+                    {
+                        context.Response.ContentType = "application/json";
+                        var response = new ApiResponseDto<object>(
+                            StatusCodes.Status401Unauthorized,
+                            false,
+                            "You are not logged in. Please login to continue.",
+                            null
+                        );
+                        await context.Response.WriteAsync(JsonSerializer.Serialize(response));
+                    }
+                    else if (context.Response.StatusCode == StatusCodes.Status403Forbidden)
+                    {
+                        context.Response.ContentType = "application/json";
+                        var response = new ApiResponseDto<object>(
+                            StatusCodes.Status403Forbidden,
+                            false,
+                            "You do not have permission to access this resource.",
+                            null
+                        );
+                        await context.Response.WriteAsync(JsonSerializer.Serialize(response));
+                    }
+                }
             }
             catch (Exception ex)
             {
@@ -30,9 +56,7 @@ namespace Marqelle.Api.Middleware
                     null
                 );
 
-                var result = JsonSerializer.Serialize(response);
-
-                await context.Response.WriteAsync(result);
+                await context.Response.WriteAsync(JsonSerializer.Serialize(response));
             }
         }
     }

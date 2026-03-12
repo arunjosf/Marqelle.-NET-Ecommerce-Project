@@ -10,6 +10,7 @@ namespace Marqelle.Application.DTO
     public class AddressDto
     {
         public long AddressId { get; set; }
+        public bool IsDefault { get; set; }
         [Required(ErrorMessage = "Address type is required")]
         [RegularExpression("Home|Work", ErrorMessage = "AddressType must be 'Home' or 'Work'")]
         public string AddressType { get; set; }

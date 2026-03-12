@@ -32,6 +32,7 @@ namespace Marqelle.Domain.Entities
         public string FlatorHouseorBuildingName {  get; set; }
         
         public string LandMark { get; set; }
+        public bool IsDefault { get; set; } = false;
 
     }
 }

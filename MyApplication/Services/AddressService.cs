@@ -11,8 +11,8 @@ namespace Marqelle.Application.Services
 {
     public class AddressService : IAddressService
     {
-        private readonly IAddressRepository _repository;
-        public AddressService(IAddressRepository repository)
+        private readonly IGenericRepository<Address> _repository;
+        public AddressService(IGenericRepository<Address> repository)
         {
             _repository = repository;
         }
@@ -32,24 +32,35 @@ namespace Marqelle.Application.Services
                 FlatorHouseorBuildingName = dto.FlatorHouseorBuildingName,
                 LandMark = dto.LandMark,
             };
-            await _repository.AddAddressAsync(address);
+            await _repository.AddAsync(address);
+            await _repository.SaveAsync();
 
         }
 
         public async Task DeleteAddress(long addressId)
         {
-            var address = await _repository.GetAddressByIdAsync(addressId);
+            var address = await _repository.GetByIdAsync(addressId);
 
             if (address == null)
                 throw new Exception("No address found");
-            await _repository.DeleteAddressAsync(address);
+               
+            _repository.Delete(address);
+            await _repository.SaveAsync();
         }
 
         public async Task<List<AddressDto>> GetUserAddress(long userId)
         {
-            var addresses = await _repository.GetUserAddressesAsync(userId);
+            // 1️⃣ Fetch all addresses from repository
+            var allAddresses = await _repository.GetAllAsync(); // repository unchanged
 
-            return addresses.Select(a => new AddressDto
+            // 2️⃣ Filter only current user's addresses
+            var userAddresses = allAddresses
+                .Where(a => a.UserId == userId)   // <-- this filter is crucial
+                .OrderByDescending(a => a.Id)     // most recent first
+                .ToList();
+
+            // 3️⃣ Map only filtered addresses
+            var addressDtos = userAddresses.Select(a => new AddressDto
             {
                 AddressId = a.Id,
                 AddressType = a.AddressType,
@@ -63,11 +74,13 @@ namespace Marqelle.Application.Services
                 FlatorHouseorBuildingName = a.FlatorHouseorBuildingName,
                 LandMark = a.LandMark
             }).ToList();
+
+            return addressDtos;
         }
 
         public async Task UpdateAddressAsync(long addressId,long userId, AddressDto dto)
         {
-            var address = await _repository.GetAddressByIdAsync(addressId);
+            var address = await _repository.GetByIdAsync(addressId);
 
             if (address == null || address.UserId != userId)
                 throw new Exception("Address not found or you are not authorized");
@@ -83,44 +96,31 @@ namespace Marqelle.Application.Services
             address.FlatorHouseorBuildingName = dto.FlatorHouseorBuildingName;
             address.LandMark = dto.LandMark;
 
-            await _repository.UpdateAddressAsync(address);
+             _repository.Update(address);
+            await _repository.SaveAsync();
 
         }
 
-        public async Task<AddressCheckoutDto?> GetCheckoutAddressAsync(long userId)
+        public async Task SetDefaultAddressAsync(long addressId, long userId)
         {
-            var addresses = await _repository.GetUserAddressesAsync(userId);
+            // Fetch only this user's addresses as TRACKED entities
+            var userAddresses = await _repository.FindAllAsync(a => a.UserId == userId);
 
-            var address = addresses.FirstOrDefault();
+            var targetAddress = userAddresses.FirstOrDefault(a => a.Id == addressId);
 
-            if (address == null)
-                return null;
+            if (targetAddress == null)
+                throw new Exception("Address not found or you are not authorized.");
 
-            return new AddressCheckoutDto
+            // Directly mutate the tracked entities — EF change tracker picks this up
+            foreach (var addr in userAddresses)
             {
-                AddressId = address.Id,
-                FullName = address.FullName,
-                AddressLine = $"{address.FlatorHouseorBuildingName}, {address.LandMark}",
-                CityStatePincode = $"{address.City}, {address.State} {address.Pincode}",
-                Country = address.Country,
-                PhoneNumber = address.PhoneNumber
-            };
-        }
+                addr.IsDefault = addr.Id == addressId;
+            }
 
-        public async Task<List<AddressCheckoutDto>> GetCheckoutAddressesAsync(long userId)
-        {
-            var addresses = await _repository.GetUserAddressesAsync(userId);
-
-            return addresses.Select(a => new AddressCheckoutDto
-            {
-                AddressId = a.Id,
-                FullName = a.FullName,
-                AddressLine = $"{a.FlatorHouseorBuildingName}, {a.LandMark}",
-                CityStatePincode = $"{a.City}, {a.State} {a.Pincode}",
-                Country = a.Country,
-                PhoneNumber = a.PhoneNumber
-            }).ToList();
+            // One SaveAsync() persists all changes in a single transaction
+            await _repository.SaveAsync();
         }
     }
 }
+
 

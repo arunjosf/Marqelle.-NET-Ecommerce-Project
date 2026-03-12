@@ -26,4 +26,8 @@
     <ProjectReference Include="..\MyInfrastructure\Marqelle.Infrastructure.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="wwwroot\" />
+  </ItemGroup>
+
 </Project>

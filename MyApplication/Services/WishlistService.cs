@@ -8,8 +8,6 @@ using System.Text;
 using System.Threading.Tasks;
 using static System.Net.Mime.MediaTypeNames;
 
-
-
 namespace Marqelle.Application.Services
 {
     public class WishlistService : IWishlistService

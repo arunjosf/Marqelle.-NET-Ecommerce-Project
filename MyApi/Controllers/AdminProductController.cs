@@ -1,6 +1,7 @@
 ﻿using Marqelle.Application.DTO;
 using Marqelle.Application.Interfaces;
 using Marqelle.Domain.Entities;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -8,15 +9,29 @@ namespace Marqelle.Api.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize(Policy = "AdminOnly")]
     public class AdminProductController : ControllerBase
     {
         private readonly IAdminProductService _service;
+        private readonly IWebHostEnvironment _env;
 
-        public AdminProductController(IAdminProductService service)
+        public AdminProductController(IAdminProductService service, IWebHostEnvironment env)
         {
             _service = service;
+            _env = env;
         }
 
+        [HttpPost("upload-images")]
+        public async Task<IActionResult> UploadImages([FromForm] List<IFormFile> images)
+        {
+            var urls = await _service.UploadImagesAsync(images, _env.WebRootPath);
+
+            return Ok(new ApiResponseDto<List<string>>(
+                StatusCodes.Status200OK, true, "Images uploaded successfully.", urls));
+        }
+
+        // STEP 2 — POST /api/adminproduct/add-product
+        // Use image URLs returned from upload-images in imageUrls field
         [HttpPost("add-product")]
         public async Task<IActionResult> AddProduct([FromBody] AdminAddproductDto dto)
         {
@@ -24,56 +39,89 @@ namespace Marqelle.Api.Controllers
             {
                 var errors = ModelState.Values
                     .SelectMany(v => v.Errors)
-                    .Select(e => e.ErrorMessage);
+                    .Select(e => e.ErrorMessage)
+                    .ToList();
 
+                return BadRequest(new ApiResponseDto<List<string>>(
+                    StatusCodes.Status400BadRequest, false, "Validation failed.", errors));
+            }
+
+            await _service.AddProductAsync(dto);
+
+            return Ok(new ApiResponseDto<object>(
+                StatusCodes.Status200OK, true, "Product added successfully.", null));
+        }
+
+        [HttpPut("update-product")]
+        public async Task<IActionResult> UpdateProduct(
+            [FromQuery] long productId,
+            [FromBody] AdminUpateProductDto dto)
+        {
+            if (!ModelState.IsValid)
+            {
+                var errors = ModelState.Values
+                    .SelectMany(v => v.Errors)
+                    .Select(e => e.ErrorMessage)
+                    .ToList();
+
+                return BadRequest(new ApiResponseDto<List<string>>(
+                    StatusCodes.Status400BadRequest, false, "Validation failed.", errors));
+            }
+
+            await _service.UpdateProductAsync(productId, dto);
+
+            return Ok(new ApiResponseDto<object>(
+                StatusCodes.Status200OK, true, "Product updated successfully.", null));
+        }
+
+        [HttpGet("all-products")]
+        public async Task<IActionResult> GetAllProducts()
+        {
+            var products = await _service.GetAllProductsAsync();
+
+            return Ok(new ApiResponseDto<List<ProductFetchingDto>>(
+                StatusCodes.Status200OK, true, "Products fetched successfully.", products));
+        }
+
+        // GET /api/adminproduct/search?id=1&name=shirt&color=black&category=men&price=500
+        // All params are optional — use any combination
+        [HttpGet("search")]
+        public async Task<IActionResult> SearchProducts(
+            [FromQuery] long? id,
+            [FromQuery] string? name,
+            [FromQuery] string? color,
+            [FromQuery] string? category,
+            [FromQuery] decimal? price)
+        {
+            if (!id.HasValue && string.IsNullOrEmpty(name) && string.IsNullOrEmpty(color)
+                && string.IsNullOrEmpty(category) && !price.HasValue)
+            {
                 return BadRequest(new ApiResponseDto<object>(
-                    400,
-                    false,
-                    "Validation failed",
-                    errors
-                ));
+                    StatusCodes.Status400BadRequest, false,
+                    "Please provide at least one search parameter.", null));
             }
-            try
-            {
-                Products product = await _service.AddProducts(dto);
-                return Ok(new
-                {
-                    Success = true,
-                    Message = "Product added successfully",
-                    Data = new
-                    {
-                        product.Id,
-                        product.Name,
-                        product.Description,
-                        product.price,
-                        product.Color,
-                        product.Stocks,
-                        Category = dto.Category,
-                        Sizes = dto.Sizes,
-                        Images = dto.ImageUrls,
-                        product.Rating
-                    }
-                });
-            }
-            catch (ArgumentException ex)
-            {
-                return BadRequest(new ApiResponseDto<object>(
-                    400,
-                    false,
-                    ex.Message,
-                    null
-                ));
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new ApiResponseDto<object>(
-                    500,
-                    false,
-                    "Internal server error",
-                    null
-                ));
-            }
+
+            var products = await _service.SearchProductsAsync(id, name, color, category, price);
+
+            if (!products.Any())
+                return Ok(new ApiResponseDto<object>(
+                    StatusCodes.Status200OK, false, "No products found.", null));
+
+            return Ok(new ApiResponseDto<List<ProductFetchingDto>>(
+                StatusCodes.Status200OK, true, $"{products.Count} product(s) found.", products));
+        }
+    
+
+        // DELETE /api/adminproduct/delete-product?productId=X
+        [HttpDelete("delete-product")]
+        public async Task<IActionResult> DeleteProduct([FromQuery] long productId)
+        {
+            await _service.DeleteProductAsync(productId);
+
+            return Ok(new ApiResponseDto<object>(
+                StatusCodes.Status200OK, true, "Product deleted successfully.", null));
         }
     }
-    }
+}
+    
 

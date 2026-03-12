@@ -2,7 +2,6 @@
 using Marqelle.Application.Helpers;
 using Marqelle.Application.Interfaces;
 using Marqelle.Domain.Entities;
-using Marqelle.Infrastructure.Repositories;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -10,7 +9,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace Marqelle.Api.Controllers
 {
     [Route("api/[controller]")]
-    [ApiController] 
+    [ApiController]
     public class UsersAuthController : ControllerBase
     {
         private readonly IUserAuthServices _userService;

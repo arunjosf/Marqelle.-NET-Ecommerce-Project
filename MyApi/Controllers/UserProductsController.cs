@@ -2,6 +2,7 @@
 using Marqelle.Application.Interfaces;
 using Marqelle.Domain.Entities;
 using Marqelle.Domain.Enums;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -9,6 +10,7 @@ namespace Marqelle.Api.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class UserProductsController : ControllerBase
     {
         private readonly IUserProductService _upservice;
