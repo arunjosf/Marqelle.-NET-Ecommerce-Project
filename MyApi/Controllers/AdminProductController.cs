@@ -30,8 +30,6 @@ namespace Marqelle.Api.Controllers
                 StatusCodes.Status200OK, true, "Images uploaded successfully.", urls));
         }
 
-        // STEP 2 — POST /api/adminproduct/add-product
-        // Use image URLs returned from upload-images in imageUrls field
         [HttpPost("add-product")]
         public async Task<IActionResult> AddProduct([FromBody] AdminAddproductDto dto)
         {
@@ -83,8 +81,6 @@ namespace Marqelle.Api.Controllers
                 StatusCodes.Status200OK, true, "Products fetched successfully.", products));
         }
 
-        // GET /api/adminproduct/search?id=1&name=shirt&color=black&category=men&price=500
-        // All params are optional — use any combination
         [HttpGet("search")]
         public async Task<IActionResult> SearchProducts(
             [FromQuery] long? id,
@@ -110,17 +106,17 @@ namespace Marqelle.Api.Controllers
             return Ok(new ApiResponseDto<List<ProductFetchingDto>>(
                 StatusCodes.Status200OK, true, $"{products.Count} product(s) found.", products));
         }
-    
 
-        // DELETE /api/adminproduct/delete-product?productId=X
+
         [HttpDelete("delete-product")]
         public async Task<IActionResult> DeleteProduct([FromQuery] long productId)
         {
-            await _service.DeleteProductAsync(productId);
+            await _service.DeleteProductAsync(productId, _env.WebRootPath);
 
             return Ok(new ApiResponseDto<object>(
                 StatusCodes.Status200OK, true, "Product deleted successfully.", null));
         }
+
     }
 }
     

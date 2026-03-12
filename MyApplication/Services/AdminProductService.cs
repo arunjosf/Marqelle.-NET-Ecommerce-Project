@@ -1,15 +1,7 @@
 ﻿using Marqelle.Application.DTO;
 using Marqelle.Application.Interfaces;
 using Marqelle.Domain.Entities;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Text.Json;
-using System.Threading.Tasks;
-
 namespace Marqelle.Application.Services
 {
     public class AdminProductService : IAdminProductService
@@ -21,9 +13,7 @@ namespace Marqelle.Application.Services
 
         private static readonly string[] ValidSizes = { "XS", "S", "M", "L", "XL" };
 
-        public AdminProductService(
-            IGenericRepository<Products> productRepository,
-            IGenericRepository<ProductsCategory> categoryRepository,
+        public AdminProductService(IGenericRepository<Products> productRepository,IGenericRepository<ProductsCategory> categoryRepository,
             IGenericRepository<ProductsImage> imageRepository,
             IGenericRepository<ProductSizeAndStock> stockRepository)
         {
@@ -33,7 +23,6 @@ namespace Marqelle.Application.Services
             _stockRepository = stockRepository;
         }
 
-        // Step 1 — Upload images, return URLs
         public async Task<List<string>> UploadImagesAsync(List<IFormFile> images, string webRootPath)
         {
             if (images == null || !images.Any())
@@ -62,10 +51,8 @@ namespace Marqelle.Application.Services
             return imageUrls;
         }
 
-        // Step 2 — Create product with URLs from step 1
         public async Task AddProductAsync(AdminAddproductDto dto)
         {
-            // 1. Validate sizes
             foreach (var sizeStock in dto.Sizes)
             {
                 if (!ValidSizes.Contains(sizeStock.Size.ToUpper()))
@@ -75,7 +62,6 @@ namespace Marqelle.Application.Services
                     throw new Exception($"Stock for size '{sizeStock.Size}' must be greater than 0.");
             }
 
-            // 2. Check duplicate sizes
             var duplicates = dto.Sizes
                 .GroupBy(s => s.Size.ToUpper())
                 .Where(g => g.Count() > 1)
@@ -85,7 +71,6 @@ namespace Marqelle.Application.Services
             if (duplicates.Any())
                 throw new Exception($"Duplicate sizes found: {string.Join(", ", duplicates)}.");
 
-            // 3. Get or create category
             var category = await _categoryRepository.FindAsync(c =>
                 c.Name.ToLower() == dto.Category.ToLower());
 
@@ -96,7 +81,6 @@ namespace Marqelle.Application.Services
                 await _categoryRepository.SaveAsync();
             }
 
-            // 4. Create product
             var product = new Products
             {
                 Name = dto.Name,
@@ -110,7 +94,6 @@ namespace Marqelle.Application.Services
             await _productRepository.AddAsync(product);
             await _productRepository.SaveAsync();
 
-            // 5. Save image URLs
             foreach (var url in dto.ImageUrls)
             {
                 await _imageRepository.AddAsync(new ProductsImage
@@ -122,7 +105,6 @@ namespace Marqelle.Application.Services
 
             await _imageRepository.SaveAsync();
 
-            // 6. Save sizes and stock
             foreach (var sizeStock in dto.Sizes)
             {
                 await _stockRepository.AddAsync(new ProductSizeAndStock
@@ -143,14 +125,12 @@ namespace Marqelle.Application.Services
             if (product == null)
                 throw new Exception("Product not found.");
 
-            // Update basic fields if provided
             if (!string.IsNullOrEmpty(dto.Name)) product.Name = dto.Name;
             if (!string.IsNullOrEmpty(dto.Color)) product.Color = dto.Color;
             if (!string.IsNullOrEmpty(dto.Description)) product.Description = dto.Description;
             if (dto.Price.HasValue) product.price = dto.Price.Value;
             if (dto.Rating.HasValue) product.Rating = dto.Rating.Value;
 
-            // Update category if provided
             if (!string.IsNullOrEmpty(dto.Category))
             {
                 var category = await _categoryRepository.FindAsync(c =>
@@ -169,7 +149,6 @@ namespace Marqelle.Application.Services
             _productRepository.Update(product);
             await _productRepository.SaveAsync();
 
-            // Replace images if provided
             if (dto.ImageUrls != null && dto.ImageUrls.Any())
             {
                 var existingImages = await _imageRepository.FindAllAsync(i => i.ProductId == productId);
@@ -190,10 +169,9 @@ namespace Marqelle.Application.Services
                 await _imageRepository.SaveAsync();
             }
 
-            // Replace sizes and stocks if provided
             if (dto.Sizes != null && dto.Sizes.Any())
             {
-                // Validate new sizes
+
                 foreach (var sizeStock in dto.Sizes)
                 {
                     if (!ValidSizes.Contains(sizeStock.Size.ToUpper()))
@@ -233,7 +211,6 @@ namespace Marqelle.Application.Services
             return products.Select(MapToDto).ToList();
         }
 
-        // Search products by id, name, color, category, price — all optional
         public async Task<List<ProductFetchingDto>> SearchProductsAsync(
             long? id, string? name, string? color, string? category, decimal? price)
         {
@@ -262,31 +239,42 @@ namespace Marqelle.Application.Services
             return query.Select(MapToDto).ToList();
         }
 
-        // Delete product and all related data
-        public async Task DeleteProductAsync(long productId)
+        public async Task DeleteProductAsync(long productId, string webRootPath)
         {
             var product = await _productRepository.GetByIdAsync(productId);
 
             if (product == null)
                 throw new Exception("Product not found.");
 
-            // Delete images
             var images = await _imageRepository.FindAllAsync(i => i.ProductId == productId);
             foreach (var img in images)
+            {
+                DeleteImageFile(img.ImageUrl, webRootPath);
                 _imageRepository.Delete(img);
+            }
 
             await _imageRepository.SaveAsync();
 
-            // Delete sizes and stocks
             var stocks = await _stockRepository.FindAllAsync(s => s.ProductId == productId);
             foreach (var stock in stocks)
                 _stockRepository.Delete(stock);
 
             await _stockRepository.SaveAsync();
 
-            // Delete product
             _productRepository.Delete(product);
             await _productRepository.SaveAsync();
+        }
+
+        private void DeleteImageFile(string imageUrl, string webRootPath)
+        {
+            try
+            {
+                var filePath = Path.Combine(webRootPath, imageUrl.TrimStart('/').Replace('/', Path.DirectorySeparatorChar));
+                if (File.Exists(filePath))
+                    File.Delete(filePath);
+            }
+            catch {
+            }
         }
 
         private static ProductFetchingDto MapToDto(Products p) => new ProductFetchingDto

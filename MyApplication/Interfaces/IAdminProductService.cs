@@ -14,7 +14,7 @@ namespace Marqelle.Application.Interfaces
         Task<List<string>> UploadImagesAsync(List<IFormFile> images, string webRootPath);
         Task AddProductAsync(AdminAddproductDto dto);
         Task UpdateProductAsync(long productId, AdminUpateProductDto dto);
-        Task DeleteProductAsync(long productId);
+        Task DeleteProductAsync(long productId, string webRootPath);
         Task<List<ProductFetchingDto>> GetAllProductsAsync();
         Task<List<ProductFetchingDto>> SearchProductsAsync(long? id, string? name, string? color, string? category, decimal? price);
 
