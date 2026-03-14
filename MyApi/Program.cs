@@ -13,7 +13,6 @@ using System.Text;
 using Marqelle.Api.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
-builder.Environment.WebRootPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
 var jwtSettings = builder.Configuration.GetSection("jwt");
 var key = Encoding.ASCII.GetBytes(jwtSettings["key"]);
 
@@ -70,6 +69,8 @@ builder.Services.Configure<JwtSettings>(
 builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddScoped<IPasswordService, PasswordService>();
 
+builder.Services.AddScoped<ICloudinaryService, CloudinaryService>();
+
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(
         builder.Configuration.GetConnectionString("DefaultConnection")
@@ -106,6 +107,7 @@ builder.Services.AddScoped<IAddressService, AddressService>();
 builder.Services.AddScoped<ICheckoutService, CheckoutService>();
 builder.Services.AddScoped<IUserOrderService, UserOrderService>();
 builder.Services.AddScoped<IAdminOrderService, AdminOrderService>();
+builder.Services.AddScoped<IAdminUserService, AdminUserService>();
 
 
 var configuration = builder.Configuration;

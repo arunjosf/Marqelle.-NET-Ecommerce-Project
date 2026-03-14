@@ -10,50 +10,27 @@ namespace Marqelle.Application.Services
         private readonly IGenericRepository<ProductsCategory> _categoryRepository;
         private readonly IGenericRepository<ProductsImage> _imageRepository;
         private readonly IGenericRepository<ProductSizeAndStock> _stockRepository;
+        private readonly ICloudinaryService _cloudinaryService;
 
         private static readonly string[] ValidSizes = { "XS", "S", "M", "L", "XL" };
 
-        public AdminProductService(IGenericRepository<Products> productRepository,IGenericRepository<ProductsCategory> categoryRepository,
+        public AdminProductService(
+            IGenericRepository<Products> productRepository,
+            IGenericRepository<ProductsCategory> categoryRepository,
             IGenericRepository<ProductsImage> imageRepository,
-            IGenericRepository<ProductSizeAndStock> stockRepository)
+            IGenericRepository<ProductSizeAndStock> stockRepository,
+            ICloudinaryService cloudinaryService)
         {
             _productRepository = productRepository;
             _categoryRepository = categoryRepository;
             _imageRepository = imageRepository;
             _stockRepository = stockRepository;
+            _cloudinaryService = cloudinaryService;
         }
 
-        public async Task<List<string>> UploadImagesAsync(List<IFormFile> images, string webRootPath)
+        private void ValidateSizes(List<SizeStockDto> sizes)
         {
-            if (images == null || !images.Any())
-                throw new Exception("Add at least one image.");
-
-            var uploadFolder = Path.Combine(webRootPath, "images", "products");
-            Directory.CreateDirectory(uploadFolder);
-
-            var imageUrls = new List<string>();
-
-            foreach (var file in images)
-            {
-                if (file.Length == 0) continue;
-
-                var fileName = $"{Guid.NewGuid()}_{file.FileName}";
-                var filePath = Path.Combine(uploadFolder, fileName);
-
-                using (var stream = new FileStream(filePath, FileMode.Create))
-                {
-                    await file.CopyToAsync(stream);
-                }
-
-                imageUrls.Add($"/images/products/{fileName}");
-            }
-
-            return imageUrls;
-        }
-
-        public async Task AddProductAsync(AdminAddproductDto dto)
-        {
-            foreach (var sizeStock in dto.Sizes)
+            foreach (var sizeStock in sizes)
             {
                 if (!ValidSizes.Contains(sizeStock.Size.ToUpper()))
                     throw new Exception($"Invalid size '{sizeStock.Size}'. Must be one of: {string.Join(", ", ValidSizes)}.");
@@ -62,7 +39,7 @@ namespace Marqelle.Application.Services
                     throw new Exception($"Stock for size '{sizeStock.Size}' must be greater than 0.");
             }
 
-            var duplicates = dto.Sizes
+            var duplicates = sizes
                 .GroupBy(s => s.Size.ToUpper())
                 .Where(g => g.Count() > 1)
                 .Select(g => g.Key)
@@ -70,7 +47,10 @@ namespace Marqelle.Application.Services
 
             if (duplicates.Any())
                 throw new Exception($"Duplicate sizes found: {string.Join(", ", duplicates)}.");
+        }
 
+        public async Task<long> AddProductAsync(AdminAddproductDto dto)
+        {
             var category = await _categoryRepository.FindAsync(c =>
                 c.Name.ToLower() == dto.Category.ToLower());
 
@@ -94,8 +74,10 @@ namespace Marqelle.Application.Services
             await _productRepository.AddAsync(product);
             await _productRepository.SaveAsync();
 
-            foreach (var url in dto.ImageUrls)
+            foreach (var file in dto.Images)
             {
+                var url = await _cloudinaryService.UploadImageAsync(file);
+
                 await _imageRepository.AddAsync(new ProductsImage
                 {
                     ProductId = product.Id,
@@ -105,14 +87,39 @@ namespace Marqelle.Application.Services
 
             await _imageRepository.SaveAsync();
 
+            return product.Id;
+        }
+
+        public async Task AddStockAsync(long productId, AddStockDto dto)
+        {
+            var product = await _productRepository.GetByIdAsync(productId);
+
+            if (product == null)
+                throw new Exception("Product not found.");
+
+            ValidateSizes(dto.Sizes);
+
+            var existingStocks = await _stockRepository.FindAllAsync(s => s.ProductId == productId);
+
             foreach (var sizeStock in dto.Sizes)
             {
-                await _stockRepository.AddAsync(new ProductSizeAndStock
+                var size = sizeStock.Size.ToUpper();
+                var existing = existingStocks.FirstOrDefault(s => s.Size == size);
+
+                if (existing != null)
                 {
-                    ProductId = product.Id,
-                    Size = sizeStock.Size.ToUpper(),
-                    Stock = sizeStock.Stock
-                });
+                    existing.Stock += sizeStock.Stock;
+                    _stockRepository.Update(existing);
+                }
+                else
+                {
+                    await _stockRepository.AddAsync(new ProductSizeAndStock
+                    {
+                        ProductId = productId,
+                        Size = size,
+                        Stock = sizeStock.Stock
+                    });
+                }
             }
 
             await _stockRepository.SaveAsync();
@@ -149,16 +156,22 @@ namespace Marqelle.Application.Services
             _productRepository.Update(product);
             await _productRepository.SaveAsync();
 
-            if (dto.ImageUrls != null && dto.ImageUrls.Any())
+            if (dto.Images != null && dto.Images.Any())
             {
                 var existingImages = await _imageRepository.FindAllAsync(i => i.ProductId == productId);
+
                 foreach (var img in existingImages)
+                {
+                    await _cloudinaryService.DeleteImageAsync(img.ImageUrl);
                     _imageRepository.Delete(img);
+                }
 
                 await _imageRepository.SaveAsync();
 
-                foreach (var url in dto.ImageUrls)
+                foreach (var file in dto.Images)
                 {
+                    var url = await _cloudinaryService.UploadImageAsync(file);
+
                     await _imageRepository.AddAsync(new ProductsImage
                     {
                         ProductId = productId,
@@ -168,37 +181,61 @@ namespace Marqelle.Application.Services
 
                 await _imageRepository.SaveAsync();
             }
+        }
 
-            if (dto.Sizes != null && dto.Sizes.Any())
+        public async Task UpdateStockAsync(long productId, AddStockDto dto)
+        {
+            var product = await _productRepository.GetByIdAsync(productId);
+
+            if (product == null)
+                throw new Exception("Product not found.");
+
+            ValidateSizes(dto.Sizes);
+
+            var existingStocks = await _stockRepository.FindAllAsync(s => s.ProductId == productId);
+            foreach (var stock in existingStocks)
+                _stockRepository.Delete(stock);
+
+            await _stockRepository.SaveAsync();
+
+            foreach (var sizeStock in dto.Sizes)
             {
-
-                foreach (var sizeStock in dto.Sizes)
+                await _stockRepository.AddAsync(new ProductSizeAndStock
                 {
-                    if (!ValidSizes.Contains(sizeStock.Size.ToUpper()))
-                        throw new Exception($"Invalid size '{sizeStock.Size}'. Must be one of: {string.Join(", ", ValidSizes)}.");
-
-                    if (sizeStock.Stock <= 0)
-                        throw new Exception($"Stock for size '{sizeStock.Size}' must be greater than 0.");
-                }
-
-                var existingStocks = await _stockRepository.FindAllAsync(s => s.ProductId == productId);
-                foreach (var stock in existingStocks)
-                    _stockRepository.Delete(stock);
-
-                await _stockRepository.SaveAsync();
-
-                foreach (var sizeStock in dto.Sizes)
-                {
-                    await _stockRepository.AddAsync(new ProductSizeAndStock
-                    {
-                        ProductId = productId,
-                        Size = sizeStock.Size.ToUpper(),
-                        Stock = sizeStock.Stock
-                    });
-                }
-
-                await _stockRepository.SaveAsync();
+                    ProductId = productId,
+                    Size = sizeStock.Size.ToUpper(),
+                    Stock = sizeStock.Stock
+                });
             }
+
+            await _stockRepository.SaveAsync();
+        }
+
+        public async Task DeleteProductAsync(long productId)
+        {
+            var product = await _productRepository.GetByIdAsync(productId);
+
+            if (product == null)
+                throw new Exception("Product not found.");
+
+            var images = await _imageRepository.FindAllAsync(i => i.ProductId == productId);
+
+            foreach (var img in images)
+            {
+                await _cloudinaryService.DeleteImageAsync(img.ImageUrl);
+                _imageRepository.Delete(img);
+            }
+
+            await _imageRepository.SaveAsync();
+
+            var stocks = await _stockRepository.FindAllAsync(s => s.ProductId == productId);
+            foreach (var stock in stocks)
+                _stockRepository.Delete(stock);
+
+            await _stockRepository.SaveAsync();
+
+            _productRepository.Delete(product);
+            await _productRepository.SaveAsync();
         }
 
         public async Task<List<ProductFetchingDto>> GetAllProductsAsync()
@@ -239,44 +276,6 @@ namespace Marqelle.Application.Services
             return query.Select(MapToDto).ToList();
         }
 
-        public async Task DeleteProductAsync(long productId, string webRootPath)
-        {
-            var product = await _productRepository.GetByIdAsync(productId);
-
-            if (product == null)
-                throw new Exception("Product not found.");
-
-            var images = await _imageRepository.FindAllAsync(i => i.ProductId == productId);
-            foreach (var img in images)
-            {
-                DeleteImageFile(img.ImageUrl, webRootPath);
-                _imageRepository.Delete(img);
-            }
-
-            await _imageRepository.SaveAsync();
-
-            var stocks = await _stockRepository.FindAllAsync(s => s.ProductId == productId);
-            foreach (var stock in stocks)
-                _stockRepository.Delete(stock);
-
-            await _stockRepository.SaveAsync();
-
-            _productRepository.Delete(product);
-            await _productRepository.SaveAsync();
-        }
-
-        private void DeleteImageFile(string imageUrl, string webRootPath)
-        {
-            try
-            {
-                var filePath = Path.Combine(webRootPath, imageUrl.TrimStart('/').Replace('/', Path.DirectorySeparatorChar));
-                if (File.Exists(filePath))
-                    File.Delete(filePath);
-            }
-            catch {
-            }
-        }
-
         private static ProductFetchingDto MapToDto(Products p) => new ProductFetchingDto
         {
             Id = p.Id,
@@ -284,18 +283,13 @@ namespace Marqelle.Application.Services
             Description = p.Description,
             Price = p.price,
             Color = p.Color,
-
-            StockInfo = (p.Stocks != null && p.Stocks.Any() && p.Stocks.All(s => s.Stock == 0))
-           ? "Temporarily unavailable"
-           : null,
-
             Rating = p.Rating,
             CategoryName = p.Category?.Name ?? string.Empty,
-
-            Sizes = (p.Stocks != null && p.Stocks.Any())
-           ? p.Stocks.Where(s => s.Stock > 0).Select(s => s.Size).ToList()
-           : new List<string>(),
-
+            StockInfo = (p.Stocks != null && p.Stocks.Any() && p.Stocks.All(s => s.Stock == 0))
+                           ? "Temporarily unavailable" : null,
+            Sizes = p.Stocks != null
+                           ? p.Stocks.Where(s => s.Stock > 0).Select(s => s.Size).ToList()
+                           : new List<string>(),
             Images = p.Images?.Select(i => i.ImageUrl).ToList() ?? new List<string>()
         };
     }

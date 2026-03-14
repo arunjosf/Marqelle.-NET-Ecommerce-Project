@@ -39,10 +39,13 @@ namespace Marqelle.Application.DTO
         [Range(0, 5, ErrorMessage = "Rating must be between 0 and 5.")]
         public double Rating { get; set; }
 
-        [Required(ErrorMessage = "Add at least one image URL.")]
-        [MinLength(1, ErrorMessage = "Add at least one image URL.")]
-        public List<string> ImageUrls { get; set; } = new();
+        [Required(ErrorMessage = "Add at least one image.")]
+        [MinLength(1, ErrorMessage = "Add at least one image.")]
+        public List<IFormFile> Images { get; set; } = new();
+    }
 
+    public class AddStockDto
+    {
         [Required(ErrorMessage = "Add at least one size with stock.")]
         [MinLength(1, ErrorMessage = "Add at least one size with stock.")]
         public List<SizeStockDto> Sizes { get; set; } = new();

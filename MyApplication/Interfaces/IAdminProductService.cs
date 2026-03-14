@@ -11,10 +11,11 @@ namespace Marqelle.Application.Interfaces
 {
     public interface IAdminProductService
     {
-        Task<List<string>> UploadImagesAsync(List<IFormFile> images, string webRootPath);
-        Task AddProductAsync(AdminAddproductDto dto);
+        Task<long> AddProductAsync(AdminAddproductDto dto);
+        Task AddStockAsync(long productId, AddStockDto dto);
         Task UpdateProductAsync(long productId, AdminUpateProductDto dto);
-        Task DeleteProductAsync(long productId, string webRootPath);
+        Task UpdateStockAsync(long productId, AddStockDto dto);
+        Task DeleteProductAsync(long productId);
         Task<List<ProductFetchingDto>> GetAllProductsAsync();
         Task<List<ProductFetchingDto>> SearchProductsAsync(long? id, string? name, string? color, string? category, decimal? price);
 

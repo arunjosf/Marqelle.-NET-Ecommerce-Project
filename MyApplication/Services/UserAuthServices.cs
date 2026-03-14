@@ -63,7 +63,9 @@ namespace Marqelle.Application.Services
             if (user == null)
                 return null;
 
-        
+            if (user.Blocked)
+                throw new Exception("Your account has been blocked");
+
             var isValid = _passwordService.Verify(
                           user.Password,
                           password,
