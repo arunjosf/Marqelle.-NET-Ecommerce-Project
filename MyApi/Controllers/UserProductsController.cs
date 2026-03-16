@@ -10,7 +10,6 @@ namespace Marqelle.Api.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize]
     public class UserProductsController : ControllerBase
     {
         private readonly IUserProductService _upservice;

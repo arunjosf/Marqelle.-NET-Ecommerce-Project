@@ -9,7 +9,7 @@ namespace Marqelle.Api.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize]
+    
     public class UserWishlistController : ControllerBase
     {
         private readonly IWishlistService _wishlistService;
@@ -35,7 +35,7 @@ namespace Marqelle.Api.Controllers
         
 
         [HttpPost("add")]
-        public async Task<IActionResult> AddToWishlist([FromForm] WishlistRequest request)
+        public async Task<IActionResult> AddToWishlist([FromQuery] WishlistRequest request)
         {
             var userId = GetUserIdFromToken();
             await _wishlistService.AddToWishlistAsync(userId, request.ProductId);
@@ -52,7 +52,7 @@ namespace Marqelle.Api.Controllers
         }
 
         [HttpDelete("Delete")]
-        public async Task<IActionResult> RemoveFromWishlist([FromForm] WishlistRequest request)
+        public async Task<IActionResult> RemoveFromWishlist([FromQuery] WishlistRequest request)
         {
             var userId = GetUserIdFromToken();
 
@@ -81,6 +81,13 @@ namespace Marqelle.Api.Controllers
         public class WishlistRequest
         {
             public long ProductId { get; set; } 
+        }
+
+        [HttpGet("debug-claims")]
+        public IActionResult DebugClaims()
+        {
+            var claims = User.Claims.Select(c => new { c.Type, c.Value }).ToList();
+            return Ok(claims);
         }
     }
 }

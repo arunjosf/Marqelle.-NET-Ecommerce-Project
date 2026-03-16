@@ -14,7 +14,8 @@ namespace Marqelle.Domain.Entities
         public decimal price { get; set; }
         public double Rating    { get; set; }
         public string Color { get; set; }
-        
+        public bool IsDeleted { get; set; } = false;
+
 
         public long CategoryId { get; set; }
         public ProductsCategory Category { get; set; }

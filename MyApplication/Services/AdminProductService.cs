@@ -12,7 +12,7 @@ namespace Marqelle.Application.Services
         private readonly IGenericRepository<ProductSizeAndStock> _stockRepository;
         private readonly ICloudinaryService _cloudinaryService;
 
-        private static readonly string[] ValidSizes = { "XS", "S", "M", "L", "XL" };
+        private static readonly string[] ValidSizes = { "S", "M", "L", "XL" };
 
         public AdminProductService(
             IGenericRepository<Products> productRepository,
@@ -218,23 +218,11 @@ namespace Marqelle.Application.Services
             if (product == null)
                 throw new Exception("Product not found.");
 
-            var images = await _imageRepository.FindAllAsync(i => i.ProductId == productId);
+            if (product.IsDeleted)
+                throw new Exception("Product is already deleted.");
 
-            foreach (var img in images)
-            {
-                await _cloudinaryService.DeleteImageAsync(img.ImageUrl);
-                _imageRepository.Delete(img);
-            }
-
-            await _imageRepository.SaveAsync();
-
-            var stocks = await _stockRepository.FindAllAsync(s => s.ProductId == productId);
-            foreach (var stock in stocks)
-                _stockRepository.Delete(stock);
-
-            await _stockRepository.SaveAsync();
-
-            _productRepository.Delete(product);
+            product.IsDeleted = true;
+            _productRepository.Update(product);
             await _productRepository.SaveAsync();
         }
 
@@ -245,7 +233,7 @@ namespace Marqelle.Application.Services
                 p => p.Images,
                 p => p.Stocks);
 
-            return products.Select(MapToDto).ToList();
+            return products.Where(p => !p.IsDeleted).Select(MapToDto).ToList();
         }
 
         public async Task<List<ProductFetchingDto>> SearchProductsAsync(
@@ -256,7 +244,7 @@ namespace Marqelle.Application.Services
                 p => p.Images,
                 p => p.Stocks);
 
-            var query = products.AsQueryable();
+            var query = products.Where(p => !p.IsDeleted).AsQueryable();
 
             if (id.HasValue)
                 query = query.Where(p => p.Id == id.Value);

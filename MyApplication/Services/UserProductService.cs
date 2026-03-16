@@ -38,7 +38,7 @@ namespace Marqelle.Application.Services
                  p => p.Images,
                  p => p.Stocks);
 
-            var query = products.AsQueryable();
+            var query = products.Where(p => !p.IsDeleted).AsQueryable();
 
             if (!string.IsNullOrEmpty(name))
                 query = query.Where(p => p.Name.ToLower().Contains(name.ToLower()));
@@ -71,6 +71,10 @@ namespace Marqelle.Application.Services
                  p => p.Category,
                  p => p.Images,
                  p => p.Stocks);
+
+            if (product == null || product.IsDeleted)
+                return null;
+
             return product == null ? null : MapToDto(product);
         }
         
@@ -94,7 +98,7 @@ namespace Marqelle.Application.Services
             ? p.Stocks.Where(s => s.Stock > 0).Select(s => s.Size).ToList()
             : new List<string>(),
 
-            Images = p.Images?.Select(i => i.ImageUrl).ToList() ?? new List<string>()
+            Images = p.Images?.Select(i => i.ImageUrl).ToList() ?? new List<string>()   
         };
     }
 }

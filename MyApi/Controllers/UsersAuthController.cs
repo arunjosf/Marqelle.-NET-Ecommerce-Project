@@ -103,7 +103,7 @@ namespace Marqelle.Api.Controllers
                 HttpOnly = true,
                 Expires = refreshTokenExpiry,
                 Secure = true,
-                SameSite = SameSiteMode.Strict
+                SameSite = SameSiteMode.Lax
             };
             Response.Cookies.Append("refreshToken", refreshToken, refreshCookieOptions);
 
