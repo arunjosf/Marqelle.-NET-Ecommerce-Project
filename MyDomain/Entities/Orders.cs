@@ -14,6 +14,7 @@ namespace Marqelle.Domain.Entities
         public long UserId { get; set; }
         public DateTime OrderDateTime { get; set; }
         public decimal TotalAmount { get; set; }
+        public long AddressId { get; set; }
         public ICollection<OrderItems> OrderItems { get; set; }
         public ICollection<Payments> Payment { get; set; }
         public OrderStatus Status { get; set; } = OrderStatus.Pending;

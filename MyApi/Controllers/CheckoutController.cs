@@ -12,13 +12,14 @@ namespace Marqelle.Api.Controllers
     public class CheckoutController : ControllerBase
     {
         private readonly ICheckoutService _checkoutService;
-        private readonly IUserAuthServices _userService; 
+        private readonly IUserAuthServices _userService;
 
         public CheckoutController(ICheckoutService checkoutService, IUserAuthServices userService)
         {
             _checkoutService = checkoutService;
             _userService = userService;
         }
+
 
         [HttpGet("checkout-page")]
         public async Task<IActionResult> GetCheckoutPage()

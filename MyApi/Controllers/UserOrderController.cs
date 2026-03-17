@@ -1,5 +1,6 @@
 ﻿using Marqelle.Application.DTO;
 using Marqelle.Application.Interfaces;
+using Marqelle.Domain.Entities;
 using Marqelle.Domain.Enums;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -20,7 +21,7 @@ namespace Marqelle.Api.Controllers
         }
 
         [HttpPost("place-order")]
-        public async Task<IActionResult> PlaceOrder([FromForm] PlaceOrderDto dto)
+        public async Task<IActionResult> PlaceOrder([FromBody] PlaceOrderDto dto)
         {
             if (!ModelState.IsValid)
             {
@@ -33,6 +34,14 @@ namespace Marqelle.Api.Controllers
                     StatusCodes.Status400BadRequest, false, "Validation failed.", errors));
             }
 
+            var addressIdStr = Request.Query["addressId"].ToString();
+            if (string.IsNullOrEmpty(addressIdStr) || !long.TryParse(addressIdStr, out long addressId))
+            {
+                return BadRequest(new ApiResponseDto<string>(
+                    StatusCodes.Status400BadRequest, false, "Invalid or missing addressId parameter.", null));
+            }
+
+            dto.AddressId = addressId;
             var userId = GetUserId();
             var result = await _orderService.PlaceOrderAsync(userId, dto);
 

@@ -21,13 +21,8 @@ namespace Marqelle.Application.Services
         }
 
 
-        /// <summary>
-        /// Returns the checkout page data including cart products, addresses, subtotal, shipping, and total amount.
-        /// Marks the most recent address as the default.
-        /// </summary>
         public async Task<CheckoutDto> GetCheckoutPageAsync(long userId)
         {
-            // 1. Get and validate cart
             var cartItems = await _cartService.GetUserCart(userId);
 
             if (cartItems == null || !cartItems.Any())
@@ -39,7 +34,10 @@ namespace Marqelle.Application.Services
                     throw new Exception($"'{item.ProductName}' (Size: {item.Size}) is out of stock. Please remove it to continue.");
             }
 
-            // 2. Map cart items
+            return await BuildCheckoutDataAsync(userId, cartItems);
+        }
+        private async Task<CheckoutDto> BuildCheckoutDataAsync(long userId, List<UserCartDto> cartItems)
+        {
             var products = cartItems.Select(c => new CheckoutProductDto
             {
                 ProductId = c.ProductId,
@@ -53,15 +51,11 @@ namespace Marqelle.Application.Services
 
             var subtotal = products.Sum(p => p.TotalPrice);
 
-            // 3. Get user addresses — already ordered most-recent-first (by Id desc) from AddressService
             var userAddresses = await _addressService.GetUserAddress(userId);
 
             if (userAddresses == null || !userAddresses.Any())
                 throw new Exception("Please add a delivery address to continue.");
 
-            // 4. The address with the highest AddressId is the most recent — mark it as default.
-            //    We find the max AddressId here and use it for comparison so IsDefault is set
-            //    correctly regardless of any ordering or mapping issues upstream.
             long mostRecentAddressId = userAddresses.Max(a => a.AddressId);
 
             var checkoutAddresses = userAddresses.Select(a => new AddressCheckoutDto
@@ -72,7 +66,7 @@ namespace Marqelle.Application.Services
                 CityStatePincode = $"{a.City}, {a.State} - {a.Pincode}",
                 Country = a.Country,
                 PhoneNumber = a.PhoneNumber,
-                IsDefault = a.AddressId == mostRecentAddressId   // ← clean, no DB column needed
+                IsDefault = a.AddressId == mostRecentAddressId
             }).ToList();
 
             return new CheckoutDto

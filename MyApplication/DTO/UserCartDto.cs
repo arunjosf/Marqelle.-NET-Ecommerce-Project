@@ -20,6 +20,7 @@ namespace Marqelle.Application.DTO
         public int TotalCartQuantity { get; set; }
         public string? StockWarning { get; set; }
         public bool IsOutOfStock { get; set; }
+        public int AvailableStock { get; set; }
 
     }
 }

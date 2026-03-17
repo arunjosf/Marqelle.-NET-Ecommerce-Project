@@ -95,6 +95,8 @@ builder.Services.AddControllers()
         options.JsonSerializerOptions.WriteIndented = true; 
         options.JsonSerializerOptions.DefaultIgnoreCondition =
             System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull;
+        options.JsonSerializerOptions.PropertyNamingPolicy =  
+            System.Text.Json.JsonNamingPolicy.CamelCase;
     });
 
 builder.Services.AddControllers()

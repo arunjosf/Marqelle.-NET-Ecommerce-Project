@@ -94,7 +94,7 @@ namespace Marqelle.Api.Controllers
                 HttpOnly = true,
                 Expires = DateTime.UtcNow.AddMinutes(60),
                 Secure = true,
-                SameSite = SameSiteMode.Strict
+                SameSite = SameSiteMode.Lax
             };
             Response.Cookies.Append("accessToken", accessToken, accessCookieOptions);
 
@@ -184,7 +184,7 @@ namespace Marqelle.Api.Controllers
                 HttpOnly = true,
                 Expires = DateTime.UtcNow.AddMinutes(60),
                 Secure = true,
-                SameSite = SameSiteMode.Strict
+                SameSite = SameSiteMode.Lax
             };
 
             Response.Cookies.Append("accessToken", newAccessToken, accessCookieOptions);

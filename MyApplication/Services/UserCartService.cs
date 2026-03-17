@@ -94,6 +94,7 @@ namespace Marqelle.Application.Services
                     Size = c.Size,
                     StockWarning = warning,
                     IsOutOfStock = isOutOfStock,
+                    AvailableStock = stock?.Stock ?? 0,
                 });
             }
 
