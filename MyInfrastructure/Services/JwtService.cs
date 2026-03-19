@@ -29,7 +29,8 @@ namespace Marqelle.Infrastructure.Services
                         {
                    new Claim("UserId", user.Id.ToString(), ClaimValueTypes.Integer64),
                    new Claim(ClaimTypes.Email, user.Email),
-                   new Claim(ClaimTypes.Role, user.RoleId.ToString(), ClaimValueTypes.Integer)
+                   new Claim("role", user.RoleId.ToString(), ClaimValueTypes.Integer)
+
 
                 }),
                     Expires = DateTime.UtcNow.AddMinutes(Convert.ToDouble(jwtSettings["DurationMinutes"])),

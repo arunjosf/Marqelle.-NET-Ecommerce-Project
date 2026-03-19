@@ -18,6 +18,9 @@ namespace Marqelle.Domain.Entities
         public string? RefreshToken { get; set; }
         public DateTime? RefreshTokenExpiryTime { get; set; }
         public int RoleId { get; set; }
+        public string? OtpCode { get; set; }
+        public DateTime? OtpExpiry { get; set; }
+        public string? UpdatingEmail { get; set; }
         public ICollection<Address> Addresses { get; set; }
 
     }

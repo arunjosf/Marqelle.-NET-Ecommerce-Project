@@ -48,7 +48,7 @@ builder.Services.AddAuthentication(options =>
         ValidIssuer = jwtSettings["Issuer"],
         ValidAudience = jwtSettings["Audience"],
         IssuerSigningKey = new SymmetricSecurityKey(key),
-        RoleClaimType = ClaimTypes.Role
+        RoleClaimType = "role",
     };
 });
 
@@ -81,6 +81,9 @@ builder.Services.AddScoped<IPasswordService, PasswordService>();
 
 builder.Services.AddScoped<ICloudinaryService, CloudinaryService>();
 
+builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddHostedService<Marqelle.Api.BackgroundServices.PendingUserCleanupService>();
+
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(
         builder.Configuration.GetConnectionString("DefaultConnection")
@@ -108,7 +111,7 @@ builder.Services.AddControllers()
 builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy("AdminOnly", policy =>
-        policy.RequireClaim(ClaimTypes.Role, "2"));
+        policy.RequireClaim("role", "2"));
 });
 
 builder.Services.AddScoped<IUserProductService, UserProductService>();

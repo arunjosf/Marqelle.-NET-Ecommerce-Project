@@ -278,9 +278,10 @@ namespace Marqelle.Application.Services
             Sizes = p.Stocks != null
                            ? p.Stocks.Where(s => s.Stock > 0).Select(s => s.Size).ToList()
                            : new List<string>(),
+            SizeStocks = p.Stocks != null
+                           ? p.Stocks.Select(s => new SizeStockInfoDto { Size = s.Size, Stock = s.Stock }).ToList()
+                           : new List<SizeStockInfoDto>(),
             Images = p.Images?.Select(i => i.ImageUrl).ToList() ?? new List<string>()
         };
     }
 }
-
-

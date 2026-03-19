@@ -6,6 +6,13 @@ using System.Threading.Tasks;
 
 namespace Marqelle.Application.DTO
 {
+
+
+    public class SizeStockInfoDto
+    {
+        public string Size { get; set; }
+        public int Stock { get; set; }
+    }
     public class ProductFetchingDto
     {
         public long Id { get; set; }
@@ -16,6 +23,7 @@ namespace Marqelle.Application.DTO
         public string? StockInfo { get; set; }
         public string CategoryName { get; set; }
         public List<string> Sizes { get; set; }
+        public List<SizeStockInfoDto> SizeStocks { get; set; }
         public List<string> Images { get; set; }
         public double Rating { get; set; }
     }
