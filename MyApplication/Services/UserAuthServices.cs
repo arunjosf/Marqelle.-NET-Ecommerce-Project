@@ -338,5 +338,13 @@ namespace Marqelle.Application.Services
             _repository.Update(user);
             await _repository.SaveAsync();
         }
+
+        public async Task<object> GetProfileAsync(long userId)
+        {
+            var user = await _repository.GetByIdAsync(userId);
+            if (user == null) throw new Exception("User not found.");
+            return new { user.Id, user.FirstName, user.LastName, user.Email, user.RoleId };
+        }
+
     }
 }

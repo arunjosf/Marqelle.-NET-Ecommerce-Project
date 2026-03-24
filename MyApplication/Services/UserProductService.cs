@@ -24,8 +24,8 @@ namespace Marqelle.Application.Services
                  p => p.Category,
                  p => p.Images,
                  p => p.Stocks);
-            return products.Select(MapToDto).ToList();
-        }
+            return products.Where(p => !p.IsDeleted).Select(MapToDto).ToList();
+            }
 
         public async Task<List<ProductFetchingDto>> SearchProducts(string? name, string? color,string? 
             category, decimal? price, ProductSortPrice pricesort = ProductSortPrice.None,

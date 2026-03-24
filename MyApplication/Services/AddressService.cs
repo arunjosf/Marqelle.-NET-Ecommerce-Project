@@ -50,16 +50,13 @@ namespace Marqelle.Application.Services
 
         public async Task<List<AddressDto>> GetUserAddress(long userId)
         {
-            // 1️⃣ Fetch all addresses from repository
-            var allAddresses = await _repository.GetAllAsync(); // repository unchanged
+            var allAddresses = await _repository.GetAllAsync(); 
 
-            // 2️⃣ Filter only current user's addresses
             var userAddresses = allAddresses
-                .Where(a => a.UserId == userId)   // <-- this filter is crucial
-                .OrderByDescending(a => a.Id)     // most recent first
+                .Where(a => a.UserId == userId)   
+                .OrderByDescending(a => a.Id)     
                 .ToList();
 
-            // 3️⃣ Map only filtered addresses
             var addressDtos = userAddresses.Select(a => new AddressDto
             {
                 AddressId = a.Id,
@@ -103,7 +100,6 @@ namespace Marqelle.Application.Services
 
         public async Task SetDefaultAddressAsync(long addressId, long userId)
         {
-            // Fetch only this user's addresses as TRACKED entities
             var userAddresses = await _repository.FindAllAsync(a => a.UserId == userId);
 
             var targetAddress = userAddresses.FirstOrDefault(a => a.Id == addressId);
@@ -111,13 +107,11 @@ namespace Marqelle.Application.Services
             if (targetAddress == null)
                 throw new Exception("Address not found or you are not authorized.");
 
-            // Directly mutate the tracked entities — EF change tracker picks this up
             foreach (var addr in userAddresses)
             {
                 addr.IsDefault = addr.Id == addressId;
             }
 
-            // One SaveAsync() persists all changes in a single transaction
             await _repository.SaveAsync();
         }
     }

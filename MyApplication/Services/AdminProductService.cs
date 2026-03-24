@@ -155,31 +155,33 @@ namespace Marqelle.Application.Services
 
             _productRepository.Update(product);
             await _productRepository.SaveAsync();
-
-            if (dto.Images != null && dto.Images.Any())
+            if ((dto.Images != null && dto.Images.Any()) || (dto.KeepImages != null))
             {
                 var existingImages = await _imageRepository.FindAllAsync(i => i.ProductId == productId);
 
                 foreach (var img in existingImages)
                 {
-                    await _cloudinaryService.DeleteImageAsync(img.ImageUrl);
-                    _imageRepository.Delete(img);
-                }
-
-                await _imageRepository.SaveAsync();
-
-                foreach (var file in dto.Images)
-                {
-                    var url = await _cloudinaryService.UploadImageAsync(file);
-
-                    await _imageRepository.AddAsync(new ProductsImage
+                    if (dto.KeepImages == null || !dto.KeepImages.Contains(img.ImageUrl))
                     {
-                        ProductId = productId,
-                        ImageUrl = url
-                    });
+                        await _cloudinaryService.DeleteImageAsync(img.ImageUrl);
+                        _imageRepository.Delete(img);
+                    }
                 }
-
                 await _imageRepository.SaveAsync();
+
+                if (dto.Images != null && dto.Images.Any())
+                {
+                    foreach (var file in dto.Images)
+                    {
+                        var url = await _cloudinaryService.UploadImageAsync(file);
+                        await _imageRepository.AddAsync(new ProductsImage
+                        {
+                            ProductId = productId,
+                            ImageUrl = url
+                        });
+                    }
+                    await _imageRepository.SaveAsync();
+                }
             }
         }
 

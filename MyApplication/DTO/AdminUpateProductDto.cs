@@ -26,6 +26,7 @@ using System.Threading.Tasks;
             public double? Rating { get; set; }
 
             public List<IFormFile>? Images { get; set; }
-        }
+            public List<string>? KeepImages { get; set; }
+    }
     }
 

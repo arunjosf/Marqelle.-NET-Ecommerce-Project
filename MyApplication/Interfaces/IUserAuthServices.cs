@@ -16,6 +16,7 @@ namespace Marqelle.Application.Interfaces
         Task UpdateRefreshToken(long userId, string refreshToken, DateTime expiry);
         Task<Users?> ValidateRefreshToken(string refreshToken);
         Task LogOut(long userId);
+        Task<object> GetProfileAsync(long userId);
         Task ChangePasswordAsync(long userId, string currentPassword, string newPassword);
         Task UpdateProfileAsync(long userId, string firstName, string lastName, string email);
         Task ForgotPasswordAsync(string email, string newPassword);

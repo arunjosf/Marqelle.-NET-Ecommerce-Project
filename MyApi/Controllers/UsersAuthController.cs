@@ -210,15 +210,12 @@ namespace Marqelle.Api.Controllers
             {
                 var user = await _userService.VerifyEmailAsync(otpCode);
 
-                // Generate access token
                 var accessToken = _jwtService.GenerateToken(user);
 
-                // Generate refresh token
                 var refreshToken = RefreshToken.GenerateRefreshToken();
                 var hashedToken = _passwordService.Hash(refreshToken, user);
                 await _userService.UpdateRefreshToken(user.Id, hashedToken, DateTime.UtcNow.AddDays(7));
 
-                // Set cookies
                 Response.Cookies.Append("accessToken", accessToken, new CookieOptions
                 {
                     HttpOnly = true,
@@ -321,5 +318,6 @@ namespace Marqelle.Api.Controllers
                     StatusCodes.Status400BadRequest, false, ex.Message, null));
             }
         }
+
     }
 }

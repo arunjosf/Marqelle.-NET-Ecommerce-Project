@@ -82,6 +82,14 @@ namespace Marqelle.Api.Controllers
             }
         }
 
+        [HttpGet("userprofile")]
+        public async Task<ActionResult> GetProfile()
+        {
+            var userId = GetUserId();
+            var user = await _userService.GetProfileAsync(userId);
+            return Ok(new ApiResponseDto<object>(StatusCodes.Status200OK, true, "Profile fetched.", user));
+        }
+
         private long GetUserId()
         {
             var userIdClaim = User.FindFirst("UserId")?.Value;
