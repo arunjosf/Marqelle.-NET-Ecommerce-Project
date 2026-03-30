@@ -79,6 +79,21 @@ namespace Marqelle.Api.Controllers
             return Convert.ToInt64(userIdClaim);
         }
 
+        [HttpPost("create-razorpay-order")]
+        public async Task<IActionResult> CreateRazorpayOrder([FromQuery] long addressId)
+        {
+            var userId = GetUserId();
+            var result = await _orderService.CreateRazorpayOrderAsync(userId, addressId);
+            return Ok(new ApiResponseDto<RazorPayOrderDto>(200, true, "Razorpay order created.", result));
+        }
+
+        [HttpPost("verify-and-place-order")]
+        public async Task<IActionResult> VerifyAndPlaceOrder([FromBody] VerifyPaymentDto dto)
+        {
+            var userId = GetUserId();
+            var result = await _orderService.VerifyAndPlaceOrderAsync(userId, dto);
+            return Ok(new ApiResponseDto<UserOrderResponseDto>(200, true, "Order placed successfully.", result));
+        }
     }
 }
 

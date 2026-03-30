@@ -1,12 +1,15 @@
-﻿using Marqelle.Application.Interfaces;
+﻿using Marqelle.Application.DTO;
+using Marqelle.Application.Interfaces;
 using Marqelle.Domain.Entities;
 using Marqelle.Domain.Enums;
+using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Marqelle.Application.DTO;
+using Razorpay.Api;
 namespace Marqelle.Application.Services
 {
     public class UserOrderService : IUserOrderService
@@ -17,6 +20,7 @@ namespace Marqelle.Application.Services
         private readonly IGenericRepository<OrderItems> _orderItemsRepository;
         private readonly IGenericRepository<Payments> _paymentRepository;
         private readonly IGenericRepository<ProductSizeAndStock> _stockRepository;
+        private readonly IConfiguration _config;
         private const decimal ShippingCharge = 40;
 
         public UserOrderService(
@@ -25,7 +29,7 @@ namespace Marqelle.Application.Services
             IGenericRepository<Orders> orderRepository,
             IGenericRepository<OrderItems> orderItemsRepository,
             IGenericRepository<Payments> paymentRepository,
-            IGenericRepository<ProductSizeAndStock> stockRepository)
+            IGenericRepository<ProductSizeAndStock> stockRepository, IConfiguration config)
         {
             _cartService = cartService;
             _addressService = addressService;
@@ -33,6 +37,7 @@ namespace Marqelle.Application.Services
             _orderItemsRepository = orderItemsRepository;
             _paymentRepository = paymentRepository;
             _stockRepository = stockRepository;
+            _config = config;
         }
 
         public async Task<UserOrderResponseDto> PlaceOrderAsync(long userId, PlaceOrderDto dto)
@@ -60,7 +65,7 @@ namespace Marqelle.Application.Services
             var order = new Orders
             {
                 UserId = userId,
-                AddressId = dto.AddressId,  // ← ADD THIS
+                AddressId = dto.AddressId,  
                 OrderDateTime = DateTime.UtcNow,
                 TotalAmount = totalAmount,
                 Status = OrderStatus.Pending
@@ -96,7 +101,7 @@ namespace Marqelle.Application.Services
             }
 
             await _orderItemsRepository.SaveAsync();
-            await _stockRepository.SaveAsync();  // ← ADD THIS (was missing)
+            await _stockRepository.SaveAsync();  
 
             var paymentStatus = dto.PaymentMethod == PaymentMethods.COD
                 ? PaymentStatus.Pending
@@ -173,6 +178,64 @@ namespace Marqelle.Application.Services
                             TotalPrice = i.Price * i.Quantity
                         }).ToList()
                 }).ToList();
+        }
+        public async Task<RazorPayOrderDto> CreateRazorpayOrderAsync(long userId, long addressId)
+        {
+            var cartItems = await _cartService.GetUserCart(userId);
+            if (!cartItems.Any()) throw new Exception("Your cart is empty.");
+
+            var subtotal = cartItems.Sum(c => c.ProductPrice * c.Quantity);
+            var totalAmount = subtotal + 40;
+
+            var client = new RazorpayClient(
+                _config["Razorpay:KeyId"],
+                _config["Razorpay:KeySecret"]
+            );
+
+            var options = new Dictionary<string, object>
+    {
+        { "amount", (int)(totalAmount * 100) }, 
+        { "currency", "INR" },
+        { "receipt", $"order_{userId}_{DateTime.UtcNow.Ticks}" }
+    };
+
+            var order = client.Order.Create(options);
+
+            return new RazorPayOrderDto
+            {
+                RazorpayOrderId = order["id"].ToString(),
+                Amount = (long)(totalAmount * 100),
+                Currency = "INR",
+                KeyId = _config["Razorpay:KeyId"]
+            };
+        }
+       
+
+        public async Task<UserOrderResponseDto> VerifyAndPlaceOrderAsync(long userId, VerifyPaymentDto dto)
+        {
+            var attributes = new Dictionary<string, string>
+    {
+        { "razorpay_order_id", dto.RazorpayOrderId },
+        { "razorpay_payment_id", dto.RazorpayPaymentId },
+        { "razorpay_signature", dto.RazorpaySignature }
+    };
+
+            var expectedSignature = new System.Security.Cryptography.HMACSHA256(
+    System.Text.Encoding.UTF8.GetBytes(_config["Razorpay:KeySecret"]))
+    .ComputeHash(System.Text.Encoding.UTF8.GetBytes(dto.RazorpayOrderId + "|" + dto.RazorpayPaymentId));
+
+            var expectedHex = BitConverter.ToString(expectedSignature).Replace("-", "").ToLower();
+
+            if (expectedHex != dto.RazorpaySignature)
+                throw new Exception("Payment verification failed. Invalid signature.");
+
+            var placeOrderDto = new PlaceOrderDto
+            {
+                AddressId = dto.AddressId,
+                PaymentMethod = (PaymentMethods)dto.PaymentMethod
+            };
+
+            return await PlaceOrderAsync(userId, placeOrderDto);
         }
     }
 }

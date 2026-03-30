@@ -12,5 +12,7 @@ namespace Marqelle.Application.Interfaces
         Task<List<UserOrderHistoryDto>> GetUserOrdersAsync(long userId);
         Task<UserOrderResponseDto> PlaceOrderAsync(long userId, PlaceOrderDto dto);
         Task CancelOrderAsync(long orderId, long userId);
+        Task<RazorPayOrderDto> CreateRazorpayOrderAsync(long userId, long addressId);
+        Task<UserOrderResponseDto> VerifyAndPlaceOrderAsync(long userId, VerifyPaymentDto dto);
     }
 }

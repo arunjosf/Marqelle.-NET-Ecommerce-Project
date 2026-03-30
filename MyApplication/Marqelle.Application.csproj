@@ -12,6 +12,7 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Identity" Version="2.3.9" />
+    <PackageReference Include="RazorPay.Core" Version="1.0.2" />
   </ItemGroup>
 
   <ItemGroup>
