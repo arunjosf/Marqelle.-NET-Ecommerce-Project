@@ -115,11 +115,11 @@ namespace Marqelle.Infrastructure.Services
 
         private async Task SendEmailAsync(string toEmail, string subject, string body)
         {
-            var smtpHost = _config["Email:SmtpHost"];
-            var smtpPort = int.Parse(_config["Email:SmtpPort"]);
-            var smtpUser = _config["Email:SmtpUser"];
-            var smtpPass = _config["Email:SmtpPass"];
-            var fromName = _config["Email:FromName"] ?? "Marqelle";
+            var smtpHost = _config["Email__SmtpHost"];
+            var smtpPort = int.Parse(_config["Email__SmtpPort"]);
+            var smtpUser = _config["Email__SmtpUser"];
+            var smtpPass = _config["Email__SmtpPass"];
+            var fromName = _config["Email__FromName"] ?? "Marqelle";
 
             var message = new MimeMessage();
             message.From.Add(new MailboxAddress(fromName, smtpUser));
