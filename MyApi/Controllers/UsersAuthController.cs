@@ -89,12 +89,31 @@ namespace Marqelle.Api.Controllers
             var refreshTokenExpiry = DateTime.UtcNow.AddDays(7);
             await _userService.UpdateRefreshToken(user.Id, hashedToken, refreshTokenExpiry);
 
+            //var accessCookieOptions = new CookieOptions
+            //{
+            //    HttpOnly = true,
+            //    Expires = DateTime.UtcNow.AddMinutes(60),
+            //    Secure = true,
+            //    SameSite = SameSiteMode.Strict
+            //};
+            //Response.Cookies.Append("accessToken", accessToken, accessCookieOptions);
+
+            //var refreshCookieOptions = new CookieOptions
+            //{
+            //    HttpOnly = true,
+            //    Expires = refreshTokenExpiry,
+            //    Secure = true,
+            //    SameSite = SameSiteMode.Lax
+            //};
+            //Response.Cookies.Append("refreshToken", refreshToken, refreshCookieOptions);
+
+
             var accessCookieOptions = new CookieOptions
             {
                 HttpOnly = true,
                 Expires = DateTime.UtcNow.AddMinutes(60),
                 Secure = true,
-                SameSite = SameSiteMode.Strict
+                SameSite = SameSiteMode.None
             };
             Response.Cookies.Append("accessToken", accessToken, accessCookieOptions);
 
@@ -103,7 +122,7 @@ namespace Marqelle.Api.Controllers
                 HttpOnly = true,
                 Expires = refreshTokenExpiry,
                 Secure = true,
-                SameSite = SameSiteMode.Lax
+                SameSite = SameSiteMode.None 
             };
             Response.Cookies.Append("refreshToken", refreshToken, refreshCookieOptions);
 
