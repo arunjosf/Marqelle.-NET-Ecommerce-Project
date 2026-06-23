@@ -128,7 +128,7 @@ namespace Marqelle.Infrastructure.Services
 
 
             var message = new MimeMessage();
-            message.From.Add(new MailboxAddress(fromName, smtpUser));
+            message.From.Add(new MailboxAddress(fromName, "arunjoseph400@gmail.com"));
             message.To.Add(MailboxAddress.Parse(toEmail));
             message.Subject = subject;
             message.Body = new TextPart("html") { Text = body };
