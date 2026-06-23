@@ -240,14 +240,14 @@ namespace Marqelle.Api.Controllers
                     HttpOnly = true,
                     Expires = DateTime.UtcNow.AddMinutes(60),
                     Secure = true,
-                    SameSite = SameSiteMode.Strict
+                    SameSite = SameSiteMode.None
                 });
                 Response.Cookies.Append("refreshToken", refreshToken, new CookieOptions
                 {
                     HttpOnly = true,
                     Expires = DateTime.UtcNow.AddDays(7),
                     Secure = true,
-                    SameSite = SameSiteMode.Lax
+                    SameSite = SameSiteMode.None
                 });
 
                 return Ok(new ApiResponseDto<object>(
