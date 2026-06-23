@@ -134,7 +134,7 @@ namespace Marqelle.Infrastructure.Services
             message.Body = new TextPart("html") { Text = body };
 
             using var client = new SmtpClient();
-            await client.ConnectAsync(smtpHost, smtpPort, SecureSocketOptions.Auto);
+            await client.ConnectAsync(smtpHost, smtpPort, SecureSocketOptions.StartTls);
             await client.AuthenticateAsync(smtpUser, smtpPass);
             await client.SendAsync(message);
             await client.DisconnectAsync(true);
