@@ -53,13 +53,24 @@ builder.Services.AddAuthentication(options =>
 });
 
 
+//builder.Services.AddCors(options =>
+//{
+//    options.AddPolicy("AllowFrontend", policy =>
+//        policy.SetIsOriginAllowed(origin => new Uri(origin).Host == "localhost")
+//              .AllowAnyHeader()
+//              .AllowAnyMethod()
+//              .AllowCredentials());
+//});
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
-        policy.SetIsOriginAllowed(origin => new Uri(origin).Host == "localhost")
+    {
+        policy.WithOrigins("https://marqelle-ecommerce.vercel.app")
               .AllowAnyHeader()
               .AllowAnyMethod()
-              .AllowCredentials());
+              .AllowCredentials(); 
+    });
 });
 
 builder.Services.AddControllers();
@@ -133,16 +144,14 @@ var app = builder.Build();
 app.UseMiddleware<CredentialValidation>();
 app.UseMiddleware<GlobalResponse>();
 
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-    //app.UseDeveloperExceptionPage();
-}
 
-app.UseHttpsRedirection();
+app.UseSwagger();
+app.UseSwaggerUI();
+
 
 app.UseCors("AllowFrontend");
+
+app.UseHttpsRedirection();
 
 app.UseAuthentication();
 
