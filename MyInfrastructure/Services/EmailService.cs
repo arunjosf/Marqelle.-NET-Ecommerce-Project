@@ -115,11 +115,11 @@ namespace Marqelle.Infrastructure.Services
 
         private async Task SendEmailAsync(string toEmail, string subject, string body)
         {
-            var smtpHost = _config["Email__SmtpHost"];
-            var smtpPort = int.Parse(_config["Email__SmtpPort"]);
-            var smtpUser = _config["Email__SmtpUser"];
-            var smtpPass = _config["Email__SmtpPass"];
-            var fromName = _config["Email__FromName"] ?? "Marqelle";
+            var smtpHost = _config["Email:SmtpHost"] ?? "smtp.gmail.com";
+            var smtpPort = int.Parse(_config["Email:SmtpPort"] ?? "465");
+            var smtpUser = _config["Email:SmtpUser"];
+            var smtpPass = _config["Email:SmtpPass"];
+            var fromName = _config["Email:FromName"] ?? "Marqelle";
 
             Console.WriteLine($"SMTP Host: {smtpHost}, Port: {smtpPort}, User: {smtpUser}");
 
@@ -134,7 +134,7 @@ namespace Marqelle.Infrastructure.Services
             message.Body = new TextPart("html") { Text = body };
 
             using var client = new SmtpClient();
-            await client.ConnectAsync(smtpHost, smtpPort, SecureSocketOptions.StartTls);
+            await client.ConnectAsync(smtpHost, smtpPort, SecureSocketOptions.Auto);
             await client.AuthenticateAsync(smtpUser, smtpPass);
             await client.SendAsync(message);
             await client.DisconnectAsync(true);
