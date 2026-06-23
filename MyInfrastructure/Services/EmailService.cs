@@ -121,6 +121,12 @@ namespace Marqelle.Infrastructure.Services
             var smtpPass = _config["Email__SmtpPass"];
             var fromName = _config["Email__FromName"] ?? "Marqelle";
 
+            Console.WriteLine($"SMTP Host: {smtpHost}, Port: {smtpPort}, User: {smtpUser}");
+
+            if (string.IsNullOrEmpty(smtpHost) || string.IsNullOrEmpty(smtpUser) || string.IsNullOrEmpty(smtpPass))
+                throw new Exception("Email configuration is missing.");
+
+
             var message = new MimeMessage();
             message.From.Add(new MailboxAddress(fromName, smtpUser));
             message.To.Add(MailboxAddress.Parse(toEmail));
