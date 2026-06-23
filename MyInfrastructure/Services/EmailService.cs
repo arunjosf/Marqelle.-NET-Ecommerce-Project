@@ -115,8 +115,8 @@ namespace Marqelle.Infrastructure.Services
 
         private async Task SendEmailAsync(string toEmail, string subject, string body)
         {
-            var smtpHost = _config["Email:SmtpHost"] ?? "smtp.gmail.com";
-            var smtpPort = int.Parse(_config["Email:SmtpPort"] ?? "465");
+            var smtpHost = _config["Email:SmtpHost"] ?? "smtp-relay.brevo.com";
+            var smtpPort = int.Parse(_config["Email:SmtpPort"] ?? "2525");
             var smtpUser = _config["Email:SmtpUser"];
             var smtpPass = _config["Email:SmtpPass"];
             var fromName = _config["Email:FromName"] ?? "Marqelle";
