@@ -10,16 +10,20 @@ namespace Marqelle.Application.Services
         private readonly IGenericRepository<Users> _repository;
         private readonly IPasswordService _passwordService;
         private readonly IEmailService _emailService;
+        private readonly IRabbitMQProducer _rabbitProducer;
+
 
 
         public UserAuthService(
             IGenericRepository<Users> repository,
             IPasswordService passwordService,
-            IEmailService emailService)
+            IEmailService emailService,
+            IRabbitMQProducer rabbitProducer)
         {
             _repository = repository;
             _passwordService = passwordService;
             _emailService = emailService;
+            _rabbitProducer = rabbitProducer;
         }
 
 
@@ -157,7 +161,13 @@ namespace Marqelle.Application.Services
             _repository.Update(user);
             await _repository.SaveAsync();
 
-            await _emailService.SendVerificationEmailAsync(email, otp);
+            var emailMessage = new EmailMessageDto
+            {
+                ToEmail = email,
+                Subject = "OTP Verification",
+                Body = otp
+            };
+            _rabbitProducer.SendEmailMessage(emailMessage);
         }
 
         public async Task UpdateRefreshToken(long userId, string refreshToken, DateTime expiry)
@@ -345,6 +355,9 @@ namespace Marqelle.Application.Services
             if (user == null) throw new Exception("User not found.");
             return new { user.Id, user.FirstName, user.LastName, user.Email, user.RoleId };
         }
-
+        public interface IRabbitMQProducer
+        {
+            void SendEmailMessage(EmailMessageDto message); 
+        }
     }
 }

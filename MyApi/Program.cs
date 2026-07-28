@@ -11,6 +11,7 @@ using System.Data;
 using System.Security.Claims;
 using System.Text;
 using Marqelle.Api.Middleware;
+using static Marqelle.Application.Services.UserAuthService;
 
 var builder = WebApplication.CreateBuilder(args);
 var jwtSettings = builder.Configuration.GetSection("jwt");
@@ -135,6 +136,7 @@ builder.Services.AddScoped<IUserOrderService, UserOrderService>();
 builder.Services.AddScoped<IAdminOrderService, AdminOrderService>();
 builder.Services.AddScoped<IAdminUserService, AdminUserService>();
 builder.Services.AddScoped<IAdminDashboardService, AdminDashboardService>();
+builder.Services.AddScoped<IRabbitMQProducer, RabbitMQProducer>();
 
 var configuration = builder.Configuration;
 
