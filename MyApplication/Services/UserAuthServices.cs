@@ -51,10 +51,17 @@ namespace Marqelle.Application.Services
             {
                 var newOtp = new Random().Next(100000, 999999).ToString();
                 existingUser.OtpCode = newOtp;
-                existingUser.OtpExpiry = DateTime.UtcNow.AddMinutes(10);
+                existingUser.OtpExpiry = DateTime.UtcNow.AddMinutes(30);
                 _repository.Update(existingUser);
                 await _repository.SaveAsync();
-                await _emailService.SendVerificationEmailAsync(dto.Email, newOtp);
+
+                var emailMessage1 = new EmailMessageDto
+                {
+                    ToEmail = dto.Email,
+                    Subject = "OTP Verification",
+                    Body = newOtp
+                };
+                _rabbitProducer.SendEmailMessage(emailMessage1);
 
                 return new RegisterResponseDto
                 {
@@ -79,7 +86,7 @@ namespace Marqelle.Application.Services
                 Status = "Pending",
                 Blocked = false,
                 OtpCode = otp,
-                OtpExpiry = DateTime.UtcNow.AddMinutes(10),
+                OtpExpiry = DateTime.UtcNow.AddMinutes(30),
                 RefreshToken = null,
                 RefreshTokenExpiryTime = null
             };
@@ -89,7 +96,13 @@ namespace Marqelle.Application.Services
             await _repository.AddAsync(user);
             await _repository.SaveAsync();
 
-            await _emailService.SendVerificationEmailAsync(dto.Email, otp);
+            var emailMessage2 = new EmailMessageDto
+            {
+                ToEmail = dto.Email,
+                Subject = "OTP Verification",
+                Body = otp
+            };
+            _rabbitProducer.SendEmailMessage(emailMessage2);
 
             return new RegisterResponseDto
             {
@@ -156,7 +169,7 @@ namespace Marqelle.Application.Services
 
             var otp = new Random().Next(100000, 999999).ToString();
             user.OtpCode = otp;
-            user.OtpExpiry = DateTime.UtcNow.AddMinutes(10);
+            user.OtpExpiry = DateTime.UtcNow.AddMinutes(30);
 
             _repository.Update(user);
             await _repository.SaveAsync();
@@ -279,7 +292,13 @@ namespace Marqelle.Application.Services
             _repository.Update(user);
             await _repository.SaveAsync();
 
-            await _emailService.SendOtpEmailAsync(email, otp);
+            var emailMessage3 = new EmailMessageDto
+            {
+                ToEmail = email,
+                Subject = "OTP Verification",
+                Body = otp
+            };
+            _rabbitProducer.SendEmailMessage(emailMessage3);
         }
 
         public async Task VerifyOtpAndResetAsync(string otpCode, string newPassword)

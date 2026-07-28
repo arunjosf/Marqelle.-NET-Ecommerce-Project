@@ -95,6 +95,7 @@ builder.Services.AddScoped<ICloudinaryService, CloudinaryService>();
 
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddHostedService<Marqelle.Api.BackgroundServices.PendingUserCleanupService>();
+builder.Services.AddHostedService<Marqelle.Api.BackgroundServices.EmailConsumerService>();
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(
